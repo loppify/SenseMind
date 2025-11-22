@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score
 
 
 def train_model():
-    df = pd.read_csv('psychological_state_dataset.csv')
+    df = pd.read_csv('../../psychological_state_dataset.csv')
 
     X = df[['HRV (ms)', 'GSR (μS)']]
     y = df['Psychological State']
@@ -19,7 +19,7 @@ def train_model():
     y_pred = clf.predict(X_test)
     print(f"Accuracy: {accuracy_score(y_test, y_pred)}")
 
-    joblib.dump(clf, 'sensemind_model.pkl')
+    joblib.dump(clf, '../../sensemind_model.pkl')
 
 
 if __name__ == "__main__":
