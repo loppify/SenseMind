@@ -35,6 +35,28 @@ def create_recommendation_log(record_id: str, text: str) -> dict:
     return new_log
 
 
+def get_recommendation_for_record(record_id: str) -> str or None:
+    for log in RECOMMENDATION_LOG_IN_MEMORY:
+        if log["record_id"] == record_id:
+            return log["recommendation_text"]
+    return None
+
+
+def get_latest_record_with_recommendation() -> dict or None:
+    latest_record = get_latest_record()
+
+    if latest_record is None:
+        return None
+
+    record_id = latest_record["record_id"]
+
+    recommendation_text = get_recommendation_for_record(record_id)
+
+    latest_record["recommendation"] = recommendation_text if recommendation_text else "No recommendation found"
+
+    return latest_record
+
+
 def get_latest_record() -> dict or None:
     if STATE_RECORDS_IN_MEMORY:
         return STATE_RECORDS_IN_MEMORY[-1]
