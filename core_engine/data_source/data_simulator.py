@@ -48,8 +48,8 @@ class BioSensorSimulator:
         }
 
 
-sensor_simulator = BioSensorSimulator(DATASET_PATH)
-
-
-def get_simulated_data() -> dict:
-    return sensor_simulator.get_next_reading()
+# sensor_simulator = BioSensorSimulator(DATASET_PATH)
+#
+#
+# def get_simulated_data() -> dict:
+#     return sensor_simulator.get_next_reading()

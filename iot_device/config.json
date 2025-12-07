@@ -1,0 +1,6 @@
+{
+  "device_id": "SMART_BAND_V1_001",
+  "server_url": "http://127.0.0.1:5000/api/v1/data/raw",
+  "polling_interval_sec": 5,
+  "smoothing_window": 5
+}
