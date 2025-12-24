@@ -1,6 +1,6 @@
 {
   "device_id": "SMART_BAND_V1_001",
-  "server_url": "http://127.0.0.1:5000/api/v1/data/raw",
-  "polling_interval_sec": 5,
+  "server_url": "https://sensemind.onrender.com/api/v1/data/raw",
+  "polling_interval_sec": 30,
   "smoothing_window": 5
 }
