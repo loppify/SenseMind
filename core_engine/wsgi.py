@@ -1,8 +1,10 @@
+import os
+
 from core_engine.app import app
 
 if __name__ == "__main__":
     from waitress import serve
 
-    print("Starting SenseMind WSGI Server (Waitress)...")
-    print("Server running on http://127.0.0.1:5000")
-    serve(app, host='127.0.0.1', port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    print(f"Starting SenseMind WSGI Server on 0.0.0.0:{port}")
+    serve(app, host='0.0.0.0', port=port)
