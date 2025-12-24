@@ -12,8 +12,6 @@ ADMIN_TOKEN = os.getenv('ADMIN_TOKEN')
 
 def check_admin_auth():
     token = request.headers.get("X-Admin-Token")
-    print(token)
-    print(ADMIN_TOKEN)
     if token != ADMIN_TOKEN:
         return False
     return True
