@@ -4,8 +4,8 @@ import pandas as pd
 from core_engine.database.db_storage import create_state_record, create_recommendation_log
 
 MODEL_FILENAME = 'sensemind_model.pkl'
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-MODEL_PATH = os.path.join(BASE_DIR, MODEL_FILENAME)
+BASE_DIR = os.getcwd()
+MODEL_PATH = os.path.join(BASE_DIR, "core_engine", "models", MODEL_FILENAME)
 
 STATE_STRESSED = "Stressed"
 STATE_ANXIOUS = "Anxious"
