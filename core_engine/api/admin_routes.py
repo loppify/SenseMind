@@ -19,6 +19,35 @@ def check_admin_auth():
 
 @admin_bp.route('/export/data', methods=['GET'])
 def export_system_data():
+    """
+        Експорт усіх даних системи (Адмін)
+        ---
+        tags:
+          - Адміністрування
+        security:
+          - APIKeyHeader: []
+        description: Повертає всі записи станів та логів рекомендацій, що зберігаються в пам'яті.
+        responses:
+          200:
+            description: Повний пакет даних системи
+            schema:
+              properties:
+                state_records:
+                  type: array
+                  items:
+                    $ref: '#/definitions/StateRecord'
+                logs:
+                  type: array
+                  items:
+                    properties:
+                      log_id: {type: string}
+                      recommendation_text: {type: string}
+                record_count:
+                  type: integer
+                  example: 15
+          401:
+            description: Помилка авторизації (Unauthorized)
+        """
     if not check_admin_auth():
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -33,6 +62,25 @@ def export_system_data():
 
 @admin_bp.route('/system/clear', methods=['DELETE'])
 def clear_system_data():
+    """
+        Очищення пам'яті системи (Адмін)
+        ---
+        tags:
+          - Адміністрування
+        security:
+          - APIKeyHeader: []
+        description: Видаляє всі поточні записи станів та рекомендацій. Використовується для скидання сесії.
+        responses:
+          200:
+            description: Дані успішно видалені
+            schema:
+              properties:
+                message:
+                  type: string
+                  example: "System data cleared successfully"
+          401:
+            description: Помилка авторизації
+        """
     if not check_admin_auth():
         return jsonify({"error": "Unauthorized"}), 401
 

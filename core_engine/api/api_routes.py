@@ -10,6 +10,22 @@ CURRENT_SESSION_ID = "SESSION_DEMO_001"
 
 @api_bp.route('/status/current', methods=['GET'])
 def get_current_status():
+    """
+        Отримати останній класифікований стан та рекомендацію
+        ---
+        responses:
+          200:
+            description: Повертає останній запис стану SenseMind
+            schema:
+              id: StateRecord
+              properties:
+                classified_state:
+                  type: string
+                  example: Stress
+                recommendation:
+                  type: string
+                  example: Try deep breathing exercises.
+        """
     latest_record = get_latest_record_with_recommendation()
     if latest_record:
         response = latest_record.copy()
@@ -25,6 +41,31 @@ def get_current_status():
 
 @api_bp.route('/history/last_hour', methods=['GET'])
 def get_history():
+    """
+        Отримати історію станів за останню годину
+        ---
+        tags:
+          - Аналітика
+        responses:
+          200:
+            description: Список записів станів (без технічних ID) за останні 60 хвилин
+            schema:
+              type: array
+              items:
+                properties:
+                  timestamp:
+                    type: string
+                    example: "2025-11-24T15:30:00Z"
+                  classified_state:
+                    type: string
+                    example: "Stress"
+                  hrv_score:
+                    type: number
+                    example: 55.4
+                  gsr_score:
+                    type: number
+                    example: 0.12
+        """
     history = get_records_by_time(limit=60)
     cleaned_history = []
 
@@ -39,6 +80,43 @@ def get_history():
 
 @api_bp.route('/data/raw', methods=['POST'])
 def receive_raw_data():
+    """
+        Передати сирі дані для обробки та класифікації
+        ---
+        tags:
+          - Обробка даних
+        parameters:
+          - in: body
+            name: body
+            required: true
+            schema:
+              properties:
+                hrv_raw:
+                  type: number
+                  description: Сирий показник HRV
+                  example: 65.2
+                gsr_raw:
+                  type: number
+                  description: Сирий показник GSR
+                  example: 0.45
+        responses:
+          201:
+            description: Дані успішно оброблені
+            schema:
+              properties:
+                message:
+                  type: string
+                  example: "Data processed"
+                record_id:
+                  type: string
+                  example: "uuid-v4-identifier"
+                classified_state:
+                  type: string
+                  description: Результат класифікації ML-моделі
+                  example: "Calm"
+          400:
+            description: Порожній або невалідний запит
+        """
     data = request.json
     if not data:
         return jsonify({"error": "Empty payload"}), 400
