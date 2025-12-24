@@ -13,6 +13,8 @@ def get_current_status():
     """
         Отримати останній класифікований стан та рекомендацію
         ---
+        tags:
+          - Аналітика
         responses:
           200:
             description: Повертає останній запис стану SenseMind
