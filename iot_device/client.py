@@ -6,7 +6,6 @@ from collections import deque
 import pandas as pd
 import requests
 
-#
 DATASET_FILENAME = 'psychological_state_dataset.csv'
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATASET_PATH = os.path.join(BASE_DIR, DATASET_FILENAME)

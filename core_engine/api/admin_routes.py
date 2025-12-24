@@ -1,14 +1,19 @@
+import os
+
 from flask import Blueprint, jsonify, request
 from core_engine.database.db_storage import STATE_RECORDS_IN_MEMORY, RECOMMENDATION_LOG_IN_MEMORY
 import dotenv
 
 admin_bp = Blueprint('admin_v1', __name__)
 
-ADMIN_TOKEN = dotenv.load_dotenv('ADMIN_TOKEN')
+dotenv.load_dotenv()
+ADMIN_TOKEN = os.getenv('ADMIN_TOKEN')
 
 
 def check_admin_auth():
     token = request.headers.get("X-Admin-Token")
+    print(token)
+    print(ADMIN_TOKEN)
     if token != ADMIN_TOKEN:
         return False
     return True
