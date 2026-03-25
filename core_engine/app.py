@@ -1,17 +1,18 @@
-from flask import Flask
-from flasgger import Swagger
-from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager
-from flask_cors import CORS
 import os
-from dotenv import load_dotenv
 from datetime import timedelta
 
-from core_engine.database.models import db
+from dotenv import load_dotenv
+from flasgger import Swagger
+from flask import Flask
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from flask_migrate import Migrate
+
 from core_engine.api.admin_routes import admin_bp
 from core_engine.api.api_routes import api_bp
 from core_engine.api.auth_routes import auth_bp
 from core_engine.api.device_routes import device_bp
+from core_engine.database.models import db
 
 load_dotenv()
 
@@ -58,9 +59,11 @@ app.register_blueprint(device_bp, url_prefix='/api/v1/devices')
 app.register_blueprint(api_bp, url_prefix='/api/v1')
 app.register_blueprint(admin_bp, url_prefix='/api/v1/admin')
 
+
 @app.route('/')
 def index():
     return app.send_static_file('index.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

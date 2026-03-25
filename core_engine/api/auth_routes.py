@@ -29,7 +29,7 @@ def register():
     user.set_password(data['password'])
     db.session.add(user)
     db.session.commit()
-    return jsonify({"msg": "User created"}), 201
+    return jsonify({"msg": "User created", "user_id": user.id}), 201
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
@@ -50,5 +50,5 @@ def login():
     user = User.query.filter_by(username=data['username']).first()
     if user and user.check_password(data['password']):
         access_token = create_access_token(identity=str(user.id))
-        return jsonify(access_token=access_token), 200
+        return jsonify(access_token=access_token, username=user.username), 200
     return jsonify({"msg": "Bad username or password"}), 401

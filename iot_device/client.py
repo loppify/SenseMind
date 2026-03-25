@@ -62,11 +62,12 @@ class SmartBandDevice:
         self.target_hrv = DEFAULT_HRV
         self.target_gsr = DEFAULT_GSR
         self.current_state = "Neutral"
+        self.ticks_in_state = 0
+        self.max_state_duration = random.randint(15, 30)
 
         self._load_dataset_initial()
 
     def _load_dataset_initial(self):
-        """Loads a single random row from dataset to act as the baseline biological state"""
         if os.path.exists(self.file_path):
             try:
                 df = pd.read_csv(self.file_path)
@@ -75,87 +76,78 @@ class SmartBandDevice:
                     row = self._dataframe.sample(n=1).iloc[0]
                     self.current_hrv = float(row[COL_HRV])
                     self.current_gsr = float(row[COL_GSR])
-                print(f"[SIMULATION] Initial biological baseline loaded: HRV={self.current_hrv:.1f}, GSR={self.current_gsr:.2f}")
+                print(f"[SIMULATION] Baseline loaded: HRV={self.current_hrv:.1f}, GSR={self.current_gsr:.2f}")
             except Exception as e:
                 print(f"Error loading dataset: {e}")
-        else:
-            print(f"Warning: Dataset not found at {self.file_path}. Using hardcoded defaults.")
-            
+        
         self.target_hrv = self.current_hrv
         self.target_gsr = self.current_gsr
 
     def _simulate_human_biology(self):
-        """Chance-stained system mimicking real physiological state changes"""
-        # 10% chance on each tick to randomly change psychological state
-        if random.random() < 0.10:
-            chance = random.random()
-            if chance < 0.3:
-                self.current_state = "Stressed"
-                self.target_hrv = random.uniform(20.0, 45.0)  # HRV drops during stress
-                self.target_gsr = random.uniform(4.0, 8.0)    # GSR (sweating) rises
-            elif chance < 0.6:
-                self.current_state = "Relaxed"
-                self.target_hrv = random.uniform(65.0, 95.0)  # High HRV means relaxed
-                self.target_gsr = random.uniform(0.5, 2.5)    # Low GSR
+        self.ticks_in_state += 1
+
+        force_change = self.ticks_in_state > self.max_state_duration
+        
+        if random.random() < 0.08 or force_change:
+            self.ticks_in_state = 0
+            self.max_state_duration = random.randint(15, 40)
+            
+            if self.current_state != "Neutral" and force_change:
+                self.current_state = "Neutral"
+                self.target_hrv = random.uniform(55.0, 75.0)
+                self.target_gsr = random.uniform(1.5, 3.5)
             else:
-                self.current_state = "Focused/Neutral"
-                self.target_hrv = random.uniform(50.0, 70.0)
-                self.target_gsr = random.uniform(2.0, 4.0)
-                
-            print(f"[SIMULATION EVENT] User state shifted to {self.current_state}")
+                chance = random.random()
+                if chance < 0.25:
+                    self.current_state = "Stressed"
+                    self.target_hrv = random.uniform(25.0, 45.0)
+                    self.target_gsr = random.uniform(5.0, 9.0)
+                elif chance < 0.50:
+                    self.current_state = "Relaxed"
+                    self.target_hrv = random.uniform(75.0, 110.0)
+                    self.target_gsr = random.uniform(0.3, 1.2)
+                else:
+                    self.current_state = "Focused"
+                    self.target_hrv = random.uniform(50.0, 65.0)
+                    self.target_gsr = random.uniform(2.0, 4.5)
+            
+            print(f"[SIMULATION EVENT] Shifted to {self.current_state} (Target HRV: {self.target_hrv:.1f})")
 
-        # Interpolate current values towards the target (creates smooth biological transitions)
-        hrv_step = (self.target_hrv - self.current_hrv) * 0.15
-        gsr_step = (self.target_gsr - self.current_gsr) * 0.15
+        self.current_hrv += (self.target_hrv - self.current_hrv) * 0.12 + random.uniform(-1.0, 1.0)
+        self.current_gsr += (self.target_gsr - self.current_gsr) * 0.12 + random.uniform(-0.1, 0.1)
 
-        # Add biological noise (jitter) on every single tick
-        self.current_hrv += hrv_step + random.uniform(-1.5, 1.5)
-        self.current_gsr += gsr_step + random.uniform(-0.15, 0.15)
-
-        # Clamp values to extreme biological limits
-        self.current_hrv = max(10.0, min(150.0, self.current_hrv))
-        self.current_gsr = max(0.1, min(20.0, self.current_gsr))
+        # Biological clamps (Safety limits)
+        self.current_hrv = max(15.0, min(160.0, self.current_hrv))
+        self.current_gsr = max(0.05, min(15.0, self.current_gsr))
 
     def _process_data(self):
         self._simulate_human_biology()
-        
         self.hrv_buffer.append(self.current_hrv)
         self.gsr_buffer.append(self.current_gsr)
 
-        avg_hrv = sum(self.hrv_buffer) / len(self.hrv_buffer)
-        avg_gsr = sum(self.gsr_buffer) / len(self.gsr_buffer)
-
         return {
-            "hrv_raw": round(avg_hrv, 2),
-            "gsr_raw": round(avg_gsr, 3),
+            "hrv_raw": round(sum(self.hrv_buffer)/len(self.hrv_buffer), 2),
+            "gsr_raw": round(sum(self.gsr_buffer)/len(self.gsr_buffer), 3),
             "device_serial_id": self.config.get("device_serial_id"),
-            "device_password": self.config.get("device_password"),
-            "timestamp": time.time()
+            "device_password": self.config.get("device_password")
         }
 
-    def send_to_server(self, processed_data):
+    def send_to_server(self, payload):
         try:
-            response = requests.post(self.server_url, json=processed_data)
-            if response.status_code == 201:
-                print(f"[SUCCESS] Data sent: HRV={processed_data['hrv_raw']} | GSR={processed_data['gsr_raw']}")
-            elif response.status_code == 401:
-                print(f"[WARNING] 401 Unauthorized. Check device_serial_id or device_password!")
+            res = requests.post(self.server_url, json=payload, timeout=5)
+            if res.status_code == 201:
+                print(f"[SENT] {self.current_state} | HRV: {payload['hrv_raw']} | GSR: {payload['gsr_raw']}")
             else:
-                print(f"[WARNING] Server error: {response.status_code}")
+                print(f"[FAIL] Server returned {res.status_code}")
         except Exception as e:
-            print(f"[ERROR] Connection failed: {e}")
+            print(f"[ERROR] {e}")
 
     def run(self):
-        print("--- IoT Device Started ---")
-        print(f"Target Server: {self.server_url}")
-
+        print(f"--- IoT Simulation Started ({self.config.get('device_serial_id')}) ---")
         while True:
-            payload = self._process_data()
-            self.send_to_server(payload)
+            self.send_to_server(self._process_data())
             time.sleep(self.interval)
 
 
 if __name__ == "__main__":
-    cfg = ConfigManager()
-    device = SmartBandDevice(cfg)
-    device.run()
+    SmartBandDevice(ConfigManager()).run()

@@ -32,7 +32,6 @@ class EmotionClassifier:
 
     def predict(self, hrv: float, gsr: float) -> str:
         if self.model:
-            # The model was likely trained on these column names
             features = pd.DataFrame([[hrv, gsr]], columns=['HRV (ms)', 'GSR (μS)'])
             try:
                 prediction = self.model.predict(features)
