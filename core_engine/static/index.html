@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SenseMind Dashboard</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+        }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: var(--card); padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        h1, h2 { margin-top: 0; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; width: 100%; }
+        button:hover { opacity: 0.9; }
+        .hidden { display: none; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .status-box { padding: 15px; border-radius: 8px; border: 1px solid #eee; }
+        .stressed { border-left: 5px solid #ef4444; }
+        .relaxed { border-left: 5px solid #10b981; }
+        .nav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logout { width: auto; background: #9ca3af; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Auth Section -->
+        <div id="auth-section" class="card">
+            <h1 id="auth-title">Login to SenseMind</h1>
+            <div id="login-form">
+                <input type="text" id="login-username" placeholder="Username">
+                <input type="password" id="login-password" placeholder="Password">
+                <button onclick="login()">Login</button>
+                <p style="text-align:center">Don't have an account? <a href="#" onclick="toggleAuth()">Register</a></p>
+            </div>
+            <div id="register-form" class="hidden">
+                <input type="text" id="reg-username" placeholder="Username">
+                <input type="email" id="reg-email" placeholder="Email">
+                <input type="password" id="reg-password" placeholder="Password">
+                <button onclick="register()">Register</button>
+                <p style="text-align:center">Already have an account? <a href="#" onclick="toggleAuth()">Login</a></p>
+            </div>
+        </div>
+
+        <!-- Main Dashboard -->
+        <div id="dashboard" class="hidden">
+            <div class="nav">
+                <h2>Welcome, <span id="user-display"></span></h2>
+                <button class="logout" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Device Management -->
+            <div class="card">
+                <h3>My Devices</h3>
+                <div id="device-list">Loading...</div>
+                <hr>
+                <h4>Register New Device</h4>
+                <input type="text" id="dev-serial" placeholder="Device Serial ID (e.g. SN-001)">
+                <input type="text" id="dev-name" placeholder="Device Name">
+                <input type="password" id="dev-pass" placeholder="Device Password">
+                <button onclick="registerDevice()">Register Device</button>
+            </div>
+
+            <!-- Monitoring -->
+            <div id="monitoring" class="hidden">
+                <div class="card">
+                    <h3>Current Status: <span id="current-device-name"></span></h3>
+                    <div id="status-display" class="status-box">
+                        Wait for data...
+                    </div>
+                    <button style="margin-top:10px" onclick="fetchStatus()">Refresh Status</button>
+                </div>
+                
+                <div class="card">
+                    <h3>Recent History</h3>
+                    <div id="history-list"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Security</h3>
+                    <input type="password" id="new-dev-pass" placeholder="New Device Password">
+                    <button onclick="changeDevicePassword()">Change Device Password</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let currentDeviceId = null;
+
+        if (token) showDashboard();
+
+        function toggleAuth() {
+            document.getElementById('login-form').classList.toggle('hidden');
+            document.getElementById('register-form').classList.toggle('hidden');
+            document.getElementById('auth-title').innerText = 
+                document.getElementById('login-form').classList.contains('hidden') ? 'Register for SenseMind' : 'Login to SenseMind';
+        }
+
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const res = await fetch('/api/v1/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                localStorage.setItem('token', data.access_token);
+                token = data.access_token;
+                showDashboard();
+            } else alert(data.msg);
+        }
+
+        async function register() {
+            const username = document.getElementById('reg-username').value;
+            const email = document.getElementById('reg-email').value;
+            const password = document.getElementById('reg-password').value;
+            const res = await fetch('/api/v1/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password })
+            });
+            if (res.ok) {
+                alert('Success! Please login.');
+                toggleAuth();
+            } else alert((await res.json()).msg);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            location.reload();
+        }
+
+        function showDashboard() {
+            document.getElementById('auth-section').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            loadDevices();
+        }
+
+        async function loadDevices() {
+            const res = await fetch('/api/v1/devices/my', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const devices = await res.json();
+            const list = document.getElementById('device-list');
+            if (devices.length === 0) {
+                list.innerHTML = 'No devices registered.';
+                return;
+            }
+            list.innerHTML = devices.map(d => `
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                    <span><b>${d.name}</b> (${d.device_serial_id})</span>
+                    <button style="width:auto" onclick="selectDevice(${d.id}, '${d.name}')">Monitor</button>
+                </div>
+            `).join('');
+        }
+
+        async function registerDevice() {
+            const device_serial_id = document.getElementById('dev-serial').value;
+            const name = document.getElementById('dev-name').value;
+            const device_password = document.getElementById('dev-pass').value;
+            const res = await fetch('/api/v1/devices/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ device_serial_id, name, device_password })
+            });
+            if (res.ok) {
+                alert('Device registered!');
+                loadDevices();
+            } else alert((await res.json()).msg);
+        }
+
+        function selectDevice(id, name) {
+            currentDeviceId = id;
+            document.getElementById('current-device-name').innerText = name;
+            document.getElementById('monitoring').classList.remove('hidden');
+            fetchStatus();
+            fetchHistory();
+        }
+
+        async function fetchStatus() {
+            if (!currentDeviceId) return;
+            const res = await fetch(`/api/v1/status/current/${currentDeviceId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const display = document.getElementById('status-display');
+            if (res.ok) {
+                display.className = `status-box ${data.classified_state.toLowerCase().includes('stress') ? 'stressed' : 'relaxed'}`;
+                display.innerHTML = `
+                    <p><b>State:</b> ${data.classified_state}</p>
+                    <p><b>HRV:</b> ${data.hrv_score} ms | <b>GSR:</b> ${data.gsr_score} μS</p>
+                    <p><b>Recommendation:</b> ${data.recommendation}</p>
+                    <small>Last updated: ${new Date(data.timestamp).toLocaleString()}</small>
+                `;
+            } else {
+                display.innerHTML = data.message || 'No data found.';
+            }
+        }
+
+        async function fetchHistory() {
+            if (!currentDeviceId) return;
+            const res = await fetch(`/api/v1/history/${currentDeviceId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            const list = document.getElementById('history-list');
+            if (res.ok) {
+                list.innerHTML = data.map(r => `
+                    <div style="font-size:0.9em; padding:5px; border-bottom:1px solid #f9f9f9">
+                        [${new Date(r.timestamp).toLocaleTimeString()}] ${r.classified_state} (HRV: ${r.hrv_score})
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function changeDevicePassword() {
+            const new_password = document.getElementById('new-dev-pass').value;
+            const res = await fetch(`/api/v1/devices/${currentDeviceId}/change-password`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ new_password })
+            });
+            if (res.ok) alert('Device password updated!');
+            else alert('Error updating password.');
+        }
+
+        // Auto-refresh every 10 seconds if a device is selected
+        setInterval(() => {
+            if (currentDeviceId) {
+                fetchStatus();
+                fetchHistory();
+            }
+        }, 10000);
+    </script>
+</body>
+</html>

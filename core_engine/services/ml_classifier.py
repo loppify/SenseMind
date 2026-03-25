@@ -5,7 +5,7 @@ from core_engine.database.db_storage import create_state_record, create_recommen
 
 MODEL_FILENAME = 'sensemind_model.pkl'
 BASE_DIR = os.getcwd()
-MODEL_PATH = os.path.join(BASE_DIR, "core_engine", "models", MODEL_FILENAME)
+MODEL_PATH = os.path.join(BASE_DIR, MODEL_FILENAME)
 
 STATE_STRESSED = "Stressed"
 STATE_ANXIOUS = "Anxious"
@@ -32,10 +32,11 @@ class EmotionClassifier:
 
     def predict(self, hrv: float, gsr: float) -> str:
         if self.model:
+            # The model was likely trained on these column names
             features = pd.DataFrame([[hrv, gsr]], columns=['HRV (ms)', 'GSR (μS)'])
             try:
                 prediction = self.model.predict(features)
-                return prediction[0]
+                return str(prediction[0])
             except Exception as e:
                 print(f"Prediction error: {e}")
                 return STATE_UNKNOWN
@@ -59,13 +60,13 @@ def generate_recommendation(state: str) -> str:
     return recommendations.get(state, "Рівень показників у нормі.")
 
 
-def process_and_store_data(raw_data: dict, session_id: str) -> dict:
+def process_and_store_data(raw_data: dict, device_id: int) -> dict:
     hrv = raw_data.get("hrv_raw", 60.0)
     gsr = raw_data.get("gsr_raw", 1.0)
 
     state = classifier_service.predict(hrv, gsr)
 
-    record = create_state_record(session_id, state, hrv, gsr)
+    record = create_state_record(device_id, state, hrv, gsr)
 
     rec_text = generate_recommendation(state)
     create_recommendation_log(record["record_id"], rec_text)

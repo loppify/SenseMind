@@ -1,7 +1,6 @@
 import os
-
 from flask import Blueprint, jsonify, request
-from core_engine.database.db_storage import STATE_RECORDS_IN_MEMORY, RECOMMENDATION_LOG_IN_MEMORY
+from core_engine.database.models import db, StateRecord, RecommendationLog
 import dotenv
 
 admin_bp = Blueprint('admin_v1', __name__)
@@ -26,35 +25,39 @@ def export_system_data():
           - Адміністрування
         security:
           - APIKeyHeader: []
-        description: Повертає всі записи станів та логів рекомендацій, що зберігаються в пам'яті.
+        description: Повертає всі записи станів та логів рекомендацій з бази даних.
         responses:
           200:
             description: Повний пакет даних системи
-            schema:
-              properties:
-                state_records:
-                  type: array
-                  items:
-                    $ref: '#/definitions/StateRecord'
-                logs:
-                  type: array
-                  items:
-                    properties:
-                      log_id: {type: string}
-                      recommendation_text: {type: string}
-                record_count:
-                  type: integer
-                  example: 15
           401:
             description: Помилка авторизації (Unauthorized)
-        """
+    """
     if not check_admin_auth():
         return jsonify({"error": "Unauthorized"}), 401
 
+    records = StateRecord.query.all()
+    logs = RecommendationLog.query.all()
+
     export_package = {
-        "state_records": STATE_RECORDS_IN_MEMORY,
-        "logs": RECOMMENDATION_LOG_IN_MEMORY,
-        "record_count": len(STATE_RECORDS_IN_MEMORY)
+        "state_records": [
+            {
+                "id": r.id,
+                "device_id": r.device_id,
+                "timestamp": r.timestamp.isoformat(),
+                "classified_state": r.classified_state,
+                "hrv_score": r.hrv_score,
+                "gsr_score": r.gsr_score
+            } for r in records
+        ],
+        "logs": [
+            {
+                "id": l.id,
+                "record_id": l.record_id,
+                "recommendation_text": l.recommendation_text,
+                "created_at": l.created_at.isoformat()
+            } for l in logs
+        ],
+        "record_count": len(records)
     }
 
     return jsonify(export_package), 200
@@ -63,28 +66,27 @@ def export_system_data():
 @admin_bp.route('/system/clear', methods=['DELETE'])
 def clear_system_data():
     """
-        Очищення пам'яті системи (Адмін)
+        Очищення системи (Адмін)
         ---
         tags:
           - Адміністрування
         security:
           - APIKeyHeader: []
-        description: Видаляє всі поточні записи станів та рекомендацій. Використовується для скидання сесії.
+        description: Видаляє всі поточні записи станів та рекомендацій з бази даних.
         responses:
           200:
             description: Дані успішно видалені
-            schema:
-              properties:
-                message:
-                  type: string
-                  example: "System data cleared successfully"
           401:
             description: Помилка авторизації
-        """
+    """
     if not check_admin_auth():
         return jsonify({"error": "Unauthorized"}), 401
 
-    STATE_RECORDS_IN_MEMORY.clear()
-    RECOMMENDATION_LOG_IN_MEMORY.clear()
-
-    return jsonify({"message": "System data cleared successfully"}), 200
+    try:
+        db.session.query(RecommendationLog).delete()
+        db.session.query(StateRecord).delete()
+        db.session.commit()
+        return jsonify({"message": "System data cleared successfully"}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500

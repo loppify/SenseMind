@@ -1,128 +1,87 @@
 from flask import Blueprint, jsonify, request
-from core_engine.database.db_storage import get_records_by_time, \
-    get_latest_record_with_recommendation
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from core_engine.database.db_storage import get_records_by_device, \
+    get_latest_record_for_device
+from core_engine.database.models import Device
 from core_engine.services.ml_classifier import process_and_store_data
 
 api_bp = Blueprint('api_v1', __name__)
 
-CURRENT_SESSION_ID = "SESSION_DEMO_001"
-
-
-@api_bp.route('/status/current', methods=['GET'])
-def get_current_status():
+@api_bp.route('/status/current/<int:device_id>', methods=['GET'])
+@jwt_required()
+def get_current_status(device_id):
     """
-        Отримати останній класифікований стан та рекомендацію
+        Get latest state and recommendation for a device
         ---
         tags:
-          - Аналітика
+          - Analytics
+        security:
+          - APIKeyHeader: []
         responses:
           200:
-            description: Повертає останній запис стану SenseMind
-            schema:
-              id: StateRecord
-              properties:
-                classified_state:
-                  type: string
-                  example: Stress
-                recommendation:
-                  type: string
-                  example: Try deep breathing exercises.
-        """
-    latest_record = get_latest_record_with_recommendation()
+            description: Returns last record
+          404:
+            description: No data
+    """
+    user_id = int(get_jwt_identity())
+    device = Device.query.filter_by(id=device_id, user_id=user_id).first()
+    if not device:
+        return jsonify({"error": "Device not found or access denied"}), 404
+        
+    latest_record = get_latest_record_for_device(device.id)
     if latest_record:
-        response = latest_record.copy()
-        del response['record_id']
-        del response['session_id']
-        return jsonify(response), 200
+        return jsonify(latest_record), 200
 
     return jsonify({
         "status": "waiting_for_data",
         "message": "No data received from IoT device yet."
     }), 404
 
-
-@api_bp.route('/history/last_hour', methods=['GET'])
-def get_history():
+@api_bp.route('/history/<int:device_id>', methods=['GET'])
+@jwt_required()
+def get_history(device_id):
     """
-        Отримати історію станів за останню годину
+        Get last 60 records for a device
         ---
         tags:
-          - Аналітика
-        responses:
-          200:
-            description: Список записів станів (без технічних ID) за останні 60 хвилин
-            schema:
-              type: array
-              items:
-                properties:
-                  timestamp:
-                    type: string
-                    example: "2025-11-24T15:30:00Z"
-                  classified_state:
-                    type: string
-                    example: "Stress"
-                  hrv_score:
-                    type: number
-                    example: 55.4
-                  gsr_score:
-                    type: number
-                    example: 0.12
-        """
-    history = get_records_by_time(limit=60)
-    cleaned_history = []
-
-    for record in history:
-        rec_copy = record.copy()
-        del rec_copy['record_id']
-        del rec_copy['session_id']
-        cleaned_history.append(rec_copy)
-
-    return jsonify(cleaned_history), 200
-
+          - Analytics
+        security:
+          - APIKeyHeader: []
+    """
+    user_id = int(get_jwt_identity())
+    device = Device.query.filter_by(id=device_id, user_id=user_id).first()
+    if not device:
+        return jsonify({"error": "Device not found"}), 404
+        
+    history = get_records_by_device(device.id, limit=60)
+    return jsonify(history), 200
 
 @api_bp.route('/data/raw', methods=['POST'])
 def receive_raw_data():
     """
-        Передати сирі дані для обробки та класифікації
+        Submit raw data from device
         ---
         tags:
-          - Обробка даних
+          - Data Collection
         parameters:
           - in: body
             name: body
-            required: true
             schema:
               properties:
-                hrv_raw:
-                  type: number
-                  description: Сирий показник HRV
-                  example: 65.2
-                gsr_raw:
-                  type: number
-                  description: Сирий показник GSR
-                  example: 0.45
-        responses:
-          201:
-            description: Дані успішно оброблені
-            schema:
-              properties:
-                message:
-                  type: string
-                  example: "Data processed"
-                record_id:
-                  type: string
-                  example: "uuid-v4-identifier"
-                classified_state:
-                  type: string
-                  description: Результат класифікації ML-моделі
-                  example: "Calm"
-          400:
-            description: Порожній або невалідний запит
-        """
+                device_serial_id: {type: string}
+                device_password: {type: string}
+                hrv_raw: {type: number}
+                gsr_raw: {type: number}
+    """
     data = request.json
-    if not data:
-        return jsonify({"error": "Empty payload"}), 400
-    saved_record = process_and_store_data(data, CURRENT_SESSION_ID)
+    if not data or 'device_serial_id' not in data or 'device_password' not in data:
+        return jsonify({"error": "Missing device credentials"}), 400
+        
+    device = Device.query.filter_by(device_serial_id=data['device_serial_id']).first()
+    if not device or not device.check_password(data['device_password']):
+        return jsonify({"error": "Unauthorized device"}), 401
+        
+    saved_record = process_and_store_data(data, device.id)
 
     return jsonify({
         "message": "Data processed",

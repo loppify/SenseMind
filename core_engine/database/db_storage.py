@@ -1,67 +1,66 @@
-import uuid
+from core_engine.database.models import db, StateRecord, RecommendationLog, Device
 from datetime import datetime
 
-STATE_RECORDS_IN_MEMORY = []
-RECOMMENDATION_LOG_IN_MEMORY = []
-
-
-def create_state_record(session_id: str, classified_state: str, hrv_score: float, gsr_score: float) -> dict:
-    record_id = str(uuid.uuid4())
-    timestamp = datetime.now().isoformat()
-
-    new_record = {
-        "record_id": record_id,
-        "session_id": session_id,
-        "timestamp": timestamp,
-        "classified_state": classified_state,
-        "hrv_score": hrv_score,
-        "gsr_score": gsr_score
+def create_state_record(device_id: int, classified_state: str, hrv_score: float, gsr_score: float) -> dict:
+    new_record = StateRecord(
+        device_id=device_id,
+        classified_state=classified_state,
+        hrv_score=hrv_score,
+        gsr_score=gsr_score
+    )
+    db.session.add(new_record)
+    db.session.commit()
+    
+    return {
+        "record_id": new_record.id,
+        "device_id": new_record.device_id,
+        "timestamp": new_record.timestamp.isoformat(),
+        "classified_state": new_record.classified_state,
+        "hrv_score": new_record.hrv_score,
+        "gsr_score": new_record.gsr_score
     }
 
-    STATE_RECORDS_IN_MEMORY.append(new_record)
-    return new_record
-
-
-def create_recommendation_log(record_id: str, text: str) -> dict:
-    log_id = str(uuid.uuid4())
-
-    new_log = {
-        "log_id": log_id,
-        "record_id": record_id,
-        "recommendation_text": text
+def create_recommendation_log(record_id: int, text: str) -> dict:
+    new_log = RecommendationLog(
+        record_id=record_id,
+        recommendation_text=text
+    )
+    db.session.add(new_log)
+    db.session.commit()
+    
+    return {
+        "log_id": new_log.id,
+        "record_id": new_log.record_id,
+        "recommendation_text": new_log.recommendation_text
     }
 
-    RECOMMENDATION_LOG_IN_MEMORY.append(new_log)
-    return new_log
+def get_recommendation_for_record(record_id: int) -> str or None:
+    log = RecommendationLog.query.filter_by(record_id=record_id).first()
+    return log.recommendation_text if log else None
 
-
-def get_recommendation_for_record(record_id: str) -> str or None:
-    for log in RECOMMENDATION_LOG_IN_MEMORY:
-        if log["record_id"] == record_id:
-            return log["recommendation_text"]
-    return None
-
-
-def get_latest_record_with_recommendation() -> dict or None:
-    latest_record = get_latest_record()
-
+def get_latest_record_for_device(device_id: int) -> dict or None:
+    latest_record = StateRecord.query.filter_by(device_id=device_id).order_by(StateRecord.timestamp.desc()).first()
+    
     if latest_record is None:
         return None
 
-    record_id = latest_record["record_id"]
+    recommendation = get_recommendation_for_record(latest_record.id)
+    
+    return {
+        "timestamp": latest_record.timestamp.isoformat(),
+        "classified_state": latest_record.classified_state,
+        "hrv_score": latest_record.hrv_score,
+        "gsr_score": latest_record.gsr_score,
+        "recommendation": recommendation if recommendation else "No recommendation found"
+    }
 
-    recommendation_text = get_recommendation_for_record(record_id)
-
-    latest_record["recommendation"] = recommendation_text if recommendation_text else "No recommendation found"
-
-    return latest_record
-
-
-def get_latest_record() -> dict or None:
-    if STATE_RECORDS_IN_MEMORY:
-        return STATE_RECORDS_IN_MEMORY[-1]
-    return None
-
-
-def get_records_by_time(limit: int = 60) -> list:
-    return STATE_RECORDS_IN_MEMORY[-limit:]
+def get_records_by_device(device_id: int, limit: int = 60) -> list:
+    records = StateRecord.query.filter_by(device_id=device_id).order_by(StateRecord.timestamp.desc()).limit(limit).all()
+    return [
+        {
+            "timestamp": r.timestamp.isoformat(),
+            "classified_state": r.classified_state,
+            "hrv_score": r.hrv_score,
+            "gsr_score": r.gsr_score
+        } for r in records
+    ]
