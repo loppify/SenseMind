@@ -13,6 +13,7 @@ from core_engine.api.api_routes import api_bp
 from core_engine.api.auth_routes import auth_bp
 from core_engine.api.device_routes import device_bp
 from core_engine.database.models import db
+from waitress import serve
 
 load_dotenv()
 
@@ -66,4 +67,8 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    if os.getenv('FLASK_DEBUG') == '1':
+        app.run(debug=True, port=5000)
+    else:
+        print("Starting waitress server on http://0.0.0.0:5000")
+        serve(app, host='0.0.0.0', port=5000)

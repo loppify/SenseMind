@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <EditText
+        android:id="@+id/etDeviceSerial"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Serial ID (e.g. SMART_BAND_01)"
+        android:inputType="text"/>
+
+    <EditText
+        android:id="@+id/etDeviceName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Name (e.g. My Band)"
+        android:inputType="text"
+        android:layout_marginTop="8dp"/>
+
+    <EditText
+        android:id="@+id/etDevicePassword"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Device Secret Password"
+        android:inputType="textPassword"
+        android:layout_marginTop="8dp"/>
+
+</LinearLayout>

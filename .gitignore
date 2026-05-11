@@ -212,5 +212,18 @@ __marimo__/
 .idea/modules.xml
 .idea/misc.xml
 
-config.py
-pixiv_downloads/
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties

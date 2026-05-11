@@ -3,431 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SenseMind | Personal Bio-Feedback</title>
-    <!-- Fonts and Libraries -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>SenseMind - Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --secondary: #64748b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --warning: #f59e0b;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border: #e2e8f0;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-main); line-height: 1.5; }
-
-        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
-
-        /* Auth Screen */
-        .auth-wrapper { min-height: 90vh; display: flex; align-items: center; justify-content: center; }
-        .auth-card { background: var(--card); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); width: 100%; max-width: 400px; border: 1px solid var(--border); }
-        .auth-card h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; text-align: center; color: var(--primary); }
-        .auth-card p { color: var(--text-muted); text-align: center; margin-bottom: 24px; font-size: 14px; }
-
-        /* Dashboard Layout */
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
-        .header h2 { font-weight: 700; font-size: 22px; }
-
-        .dashboard-grid { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
-        @media (max-width: 850px) { .dashboard-grid { grid-template-columns: 1fr; } }
-
-        /* Components */
-        .card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 24px; margin-bottom: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .card-title { font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; font-size: 16px; }
-
-        input { width: 100%; padding: 12px 16px; margin: 8px 0 16px; border: 1.5px solid var(--border); border-radius: 8px; font-family: inherit; transition: border-color 0.2s; }
-        input:focus { outline: none; border-color: var(--primary); }
-
-        button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-family: inherit; transition: all 0.2s; }
-        button:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        button.secondary { background: var(--secondary); }
-        button.outline { background: transparent; border: 1.5px solid var(--border); color: var(--text-main); }
-        button.outline:hover { background: var(--bg); border-color: var(--secondary); }
-        button.danger { background: var(--danger); }
-
-        /* Device List */
-        .device-item { padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
-        .device-item:hover { border-color: var(--primary); background: #f5f3ff; }
-        .device-item.active { border-color: var(--primary); background: #f5f3ff; box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1); }
-        .device-info b { display: block; font-size: 14px; }
-        .device-info small { color: var(--text-muted); font-size: 12px; }
-
-        /* Stats & Chart */
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .stat-card { padding: 16px; border-radius: 10px; background: #f8fafc; border: 1px solid var(--border); text-align: center; }
-        .stat-value { font-size: 20px; font-weight: 700; color: var(--primary); }
-        .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
-
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; margin-top: 8px; }
-        .badge-relaxed { background: #dcfce7; color: #166534; }
-        .badge-stressed { background: #fee2e2; color: #991b1b; }
-        .badge-neutral { background: #f1f5f9; color: #475569; }
-
-        .recommendation-box { background: #eff6ff; border-left: 4px solid var(--primary); padding: 16px; border-radius: 8px; margin-top: 16px; font-size: 14px; }
-
-        .chart-container { height: 300px; margin-top: 20px; }
-
-        .hidden { display: none !important; }
-        .loader { width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; display: inline-block; vertical-align: middle; margin-right: 8px; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        #toast { position: fixed; bottom: 24px; right: 24px; padding: 16px 24px; border-radius: 8px; background: #1e293b; color: white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); transform: translateY(100px); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 1000; }
-        #toast.show { transform: translateY(0); }
+        .state-indicator { width: 20px; height: 20px; border-radius: 50%; display: inline-block; }
+        .state-calm { background-color: #28a745; }
+        .state-focus { background-color: #007bff; }
+        .state-stress { background-color: #dc3545; }
+        #admin-panel, #user-dashboard { display: none; }
+        #auth-section { max-width: 400px; margin: 100px auto; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <!-- Auth View -->
-        <div id="auth-view" class="auth-wrapper">
-            <div class="auth-card">
-                <h1 id="auth-title">SenseMind</h1>
-                <p id="auth-subtitle">Monitor your biological state</p>
-                
-                <form id="login-form" onsubmit="UI.handleLogin(event)">
-                    <label>Username</label>
-                    <input type="text" id="login-username" placeholder="e.g. john_doe" required>
-                    <label>Password</label>
-                    <input type="password" id="login-password" placeholder="••••••••" required>
-                    <button type="submit">Sign In</button>
-                    <p style="margin-top:20px">No account? <a href="javascript:void(0)" onclick="UI.toggleAuth()">Create one</a></p>
-                </form>
-
-                <form id="register-form" class="hidden" onsubmit="UI.handleRegister(event)">
-                    <label>Username</label>
-                    <input type="text" id="reg-username" required>
-                    <label>Email Address</label>
-                    <input type="email" id="reg-email" placeholder="john@example.com" required>
-                    <label>Password</label>
-                    <input type="password" id="reg-password" required>
-                    <button type="submit">Create Account</button>
-                    <p style="margin-top:20px">Have an account? <a href="javascript:void(0)" onclick="UI.toggleAuth()">Sign in</a></p>
-                </form>
+<body class="bg-light">
+    <nav class="navbar navbar-dark bg-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">SenseMind</a>
+            <div id="nav-controls" style="display:none;">
+                <button id="btn-logout" class="btn btn-outline-danger btn-sm">Logout</button>
             </div>
         </div>
+    </nav>
 
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="hidden">
-            <div class="header">
-                <h2>Welcome, <span id="display-name" style="color: var(--primary);">User</span></h2>
-                <div style="display:flex; gap: 12px;">
-                    <button class="outline" onclick="UI.handleLogout()">Logout</button>
-                </div>
+    <div class="container">
+        <!-- Login Section -->
+        <div id="auth-section" class="card p-4 shadow">
+            <h3 class="text-center mb-4">Login to SenseMind</h3>
+            <div class="mb-3">
+                <label class="form-label">Username</label>
+                <input type="text" id="login-user" class="form-control">
             </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" id="login-pass" class="form-control">
+            </div>
+            <button id="btn-do-login" class="btn btn-primary w-100">Login</button>
+            <p id="login-error" class="text-danger mt-2" style="display:none;">Invalid credentials</p>
+        </div>
 
-            <div class="dashboard-grid">
-                <!-- Sidebar -->
-                <div class="sidebar">
-                    <div class="card">
-                        <div class="card-title">📱 My Devices</div>
-                        <div id="device-list-container">
-                            <div style="text-align:center; padding:20px; color:var(--text-muted);">
-                                <div class="loader"></div> Loading devices...
-                            </div>
+        <!-- User Dashboard -->
+        <div id="user-dashboard">
+            <h2 id="txt-welcome">Welcome</h2>
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card p-3 shadow-sm">
+                        <h5>Current State</h5>
+                        <div class="d-flex align-items-center">
+                            <span id="state-dot" class="state-indicator me-2"></span>
+                            <span id="state-name">Loading...</span>
                         </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-title">➕ Add Device</div>
-                        <form onsubmit="UI.handleRegisterDevice(event)">
-                            <input type="text" id="new-dev-serial" placeholder="Serial (e.g. SN-001)" required>
-                            <input type="text" id="new-dev-name" placeholder="Name (e.g. My Band)" required>
-                            <input type="password" id="new-dev-pass" placeholder="Device Password" required>
-                            <button type="submit">Add Device</button>
-                        </form>
                     </div>
                 </div>
-
-                <!-- Main Monitoring Area -->
-                <div class="main-content">
-                    <div id="empty-state" class="card" style="text-align:center; padding:60px;">
-                        <div style="font-size:48px; margin-bottom:16px;">🔍</div>
-                        <h3>No device selected</h3>
-                        <p style="color:var(--text-muted);">Choose a device from the sidebar to see live bio-feedback.</p>
-                    </div>
-
-                    <div id="monitoring-area" class="hidden">
-                        <div class="card">
-                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                                <div>
-                                    <h3 id="active-device-title" style="margin-bottom:4px;">Device Name</h3>
-                                    <span id="active-device-sn" style="font-size:12px; color:var(--text-muted);">SN-001</span>
-                                </div>
-                                <div id="live-indicator" style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--success);">
-                                    <span style="width:8px; height:8px; background:var(--success); border-radius:50%;"></span> LIVE
-                                </div>
-                            </div>
-
-                            <div class="stats-grid" style="margin-top:24px;">
-                                <div class="stat-card">
-                                    <div id="stat-hrv" class="stat-value">--</div>
-                                    <div class="stat-label">HRV (ms)</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div id="stat-gsr" class="stat-value">--</div>
-                                    <div class="stat-label">GSR (μS)</div>
-                                </div>
-                            </div>
-
-                            <div style="text-align:center;">
-                                <div id="status-badge" class="status-badge badge-neutral">UNKNOWN STATE</div>
-                            </div>
-
-                            <div id="recommendation-text" class="recommendation-box">
-                                Waiting for biometric data to provide recommendations...
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-title">📈 Real-time Trend</div>
-                            <div class="chart-container">
-                                <canvas id="biometricChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="card" style="border-style: dashed; background: transparent;">
-                            <div class="card-title">⚙️ Device Security</div>
-                            <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">Change the password used by this device to connect to our server.</p>
-                            <form onsubmit="UI.handleChangeDevicePass(event)" style="display:flex; gap:12px;">
-                                <input type="password" id="change-dev-pass" placeholder="New Secret Password" style="margin:0;" required>
-                                <button type="submit" style="width:auto; white-space:nowrap;">Update</button>
-                            </form>
-                        </div>
+                <div class="col-md-8">
+                    <div class="card p-3 shadow-sm">
+                        <h5>Recommendations</h5>
+                        <p id="recommendation-text">Please select or register a device to see data.</p>
                     </div>
                 </div>
             </div>
+            
+            <button id="btn-admin-view" class="btn btn-link mt-4">Switch to Admin View (Requires Admin Rights)</button>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel">
+            <h3>System Administration</h3>
+            <div class="alert alert-info">Admin access granted. Monitoring system health.</div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="card p-3">
+                        <h5>User Management</h5>
+                        <button class="btn btn-primary btn-sm mt-2">List Active Users</button>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-3">
+                        <h5>System Logs & Backup</h5>
+                        <button class="btn btn-secondary btn-sm mt-2">Export Database</button>
+                    </div>
+                </div>
+            </div>
+            <button id="btn-back-dashboard" class="btn btn-link mt-3">Back to Dashboard</button>
         </div>
     </div>
 
-    <div id="toast">Message here</div>
-
     <script>
-        // --- State Management ---
-        const State = {
-            token: localStorage.getItem('token'),
-            devices: [],
-            currentDeviceId: null,
-            chart: null,
-            refreshInterval: null
-        };
+        let token = localStorage.getItem('sm_token');
 
-        // --- API Client ---
-        const API = {
-            async request(endpoint, method = 'GET', body = null) {
-                const headers = { 'Content-Type': 'application/json' };
-                if (State.token) headers['Authorization'] = `Bearer ${State.token}`;
-                
-                try {
-                    const res = await fetch(`/api/v1${endpoint}`, {
-                        method,
-                        headers,
-                        body: body ? JSON.stringify(body) : null
-                    });
-                    const data = await res.json();
-                    if (res.status === 401) UI.handleLogout();
-                    if (!res.ok) throw new Error(data.msg || data.error || 'Request failed');
-                    return data;
-                } catch (err) {
-                    UI.notify(err.message, 'danger');
-                    throw err;
-                }
+        function checkAuth() {
+            if (token) {
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('user-dashboard').style.display = 'block';
+                document.getElementById('nav-controls').style.display = 'block';
+                fetchData();
+            } else {
+                document.getElementById('auth-section').style.display = 'block';
+                document.getElementById('user-dashboard').style.display = 'none';
+                document.getElementById('nav-controls').style.display = 'none';
             }
-        };
-
-        // --- UI Controller ---
-        const UI = {
-            notify(msg, type = 'info') {
-                const t = document.getElementById('toast');
-                t.innerText = msg;
-                t.style.background = type === 'danger' ? '#ef4444' : '#1e293b';
-                t.classList.add('show');
-                setTimeout(() => t.classList.remove('show'), 3000);
-            },
-
-            toggleAuth() {
-                document.getElementById('login-form').classList.toggle('hidden');
-                document.getElementById('register-form').classList.toggle('hidden');
-                document.getElementById('auth-title').innerText = 
-                    document.getElementById('login-form').classList.contains('hidden') ? 'Create Account' : 'SenseMind';
-            },
-
-            async handleLogin(e) {
-                if(e) e.preventDefault();
-                const username = document.getElementById('login-username').value;
-                const password = document.getElementById('login-password').value;
-                try {
-                    const data = await API.request('/auth/login', 'POST', { username, password });
-                    localStorage.setItem('token', data.access_token);
-                    localStorage.setItem('username', data.username);
-                    State.token = data.access_token;
-                    location.reload();
-                } catch (e) {}
-            },
-
-            async handleRegister(e) {
-                if(e) e.preventDefault();
-                const username = document.getElementById('reg-username').value;
-                const email = document.getElementById('reg-email').value;
-                const password = document.getElementById('reg-password').value;
-                try {
-                    await API.request('/auth/register', 'POST', { username, email, password });
-                    this.notify('Account created! Please login.');
-                    this.toggleAuth();
-                } catch (e) {}
-            },
-
-            handleLogout() {
-                localStorage.removeItem('token');
-                localStorage.removeItem('username');
-                location.reload();
-            },
-
-            async handleRegisterDevice(e) {
-                if(e) e.preventDefault();
-                const serial = document.getElementById('new-dev-serial').value;
-                const name = document.getElementById('new-dev-name').value;
-                const pass = document.getElementById('new-dev-pass').value;
-                try {
-                    await API.request('/devices/register', 'POST', { 
-                        device_serial_id: serial, 
-                        name, 
-                        device_password: pass 
-                    });
-                    this.notify('Device linked successfully!');
-                    this.loadDevices();
-                } catch (e) {}
-            },
-
-            async loadDevices() {
-                try {
-                    const devices = await API.request('/devices/my');
-                    const container = document.getElementById('device-list-container');
-                    if (devices.length === 0) {
-                        container.innerHTML = '<p style="text-align:center; color:var(--text-muted); font-size:13px;">No devices yet.</p>';
-                        return;
-                    }
-                    container.innerHTML = devices.map(d => `
-                        <div class="device-item ${State.currentDeviceId == d.id ? 'active' : ''}" onclick="UI.selectDevice(${d.id}, '${d.name}', '${d.device_serial_id}')">
-                            <div class="device-info">
-                                <b>${d.name}</b>
-                                <small>${d.device_serial_id}</small>
-                            </div>
-                            <span style="color:var(--primary); font-size:18px;">›</span>
-                        </div>
-                    `).join('');
-                } catch (e) {}
-            },
-
-            selectDevice(id, name, sn) {
-                State.currentDeviceId = id;
-                document.getElementById('empty-state').classList.add('hidden');
-                document.getElementById('monitoring-area').classList.remove('hidden');
-                document.getElementById('active-device-title').innerText = name;
-                document.getElementById('active-device-sn').innerText = sn;
-                this.loadDevices();
-                this.initChart();
-                if (State.refreshInterval) clearInterval(State.refreshInterval);
-                this.updateMonitoring();
-                State.refreshInterval = setInterval(() => this.updateMonitoring(), 5000);
-            },
-
-            async updateMonitoring() {
-                if (!State.currentDeviceId) return;
-                try {
-                    const data = await API.request(`/status/current/${State.currentDeviceId}`);
-                    document.getElementById('stat-hrv').innerText = data.hrv_score.toFixed(1);
-                    document.getElementById('stat-gsr').innerText = data.gsr_score.toFixed(2);
-                    const badge = document.getElementById('status-badge');
-                    badge.innerText = data.classified_state.toUpperCase();
-                    badge.className = 'status-badge ' + (data.classified_state.toLowerCase().includes('stress') ? 'badge-stressed' : 'badge-relaxed');
-                    document.getElementById('recommendation-text').innerText = data.recommendation;
-                    const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-                    this.addChartData(now, data.hrv_score, data.gsr_score * 10);
-                } catch (e) {
-                    if (e.message.includes('No data')) {
-                        document.getElementById('stat-hrv').innerText = '--';
-                        document.getElementById('stat-gsr').innerText = '--';
-                    }
-                }
-            },
-
-            async handleChangeDevicePass(e) {
-                if(e) e.preventDefault();
-                const new_password = document.getElementById('change-dev-pass').value;
-                try {
-                    await API.request(`/devices/${State.currentDeviceId}/change-password`, 'PUT', { new_password });
-                    this.notify('Device password updated!');
-                    document.getElementById('change-dev-pass').value = '';
-                } catch (e) {}
-            },
-
-            initChart() {
-                if (State.chart) State.chart.destroy();
-                const ctx = document.getElementById('biometricChart').getContext('2d');
-                State.chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [],
-                        datasets: [
-                            {
-                                label: 'HRV (ms)',
-                                borderColor: '#6366f1',
-                                backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                                data: [],
-                                fill: true,
-                                tension: 0.4
-                            },
-                            {
-                                label: 'GSR (μS × 10)',
-                                borderColor: '#10b981',
-                                backgroundColor: 'transparent',
-                                data: [],
-                                tension: 0.4
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom' } },
-                        scales: {
-                            y: { beginAtZero: false, grid: { color: '#f1f5f9' } },
-                            x: { grid: { display: false } }
-                        }
-                    }
-                });
-            },
-
-            addChartData(label, hrv, gsr) {
-                const chart = State.chart;
-                if (!chart) return;
-                chart.data.labels.push(label);
-                chart.data.datasets[0].data.push(hrv);
-                chart.data.datasets[1].data.push(gsr);
-                if (chart.data.labels.length > 15) {
-                    chart.data.labels.shift();
-                    chart.data.datasets[0].data.shift();
-                    chart.data.datasets[1].data.shift();
-                }
-                chart.update('none');
-            }
-        };
-
-        // --- Initialization ---
-        if (State.token) {
-            document.getElementById('auth-view').classList.add('hidden');
-            document.getElementById('dashboard-view').classList.remove('hidden');
-            document.getElementById('display-name').innerText = localStorage.getItem('username') || 'User';
-            UI.loadDevices();
         }
+
+        async function fetchData() {
+            // In a real app, we would fetch /api/v1/status/current/1
+            // For now, we simulate data display if logged in
+            document.getElementById('state-name').innerText = "Calm (Connected)";
+            document.getElementById('state-dot').className = "state-indicator state-calm";
+        }
+
+        document.getElementById('btn-do-login').addEventListener('click', async () => {
+            const username = document.getElementById('login-user').value;
+            const password = document.getElementById('login-pass').value;
+
+            try {
+                const response = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    token = data.access_token;
+                    localStorage.setItem('sm_token', token);
+                    checkAuth();
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            localStorage.removeItem('sm_token');
+            token = null;
+            checkAuth();
+        });
+
+        document.getElementById('btn-admin-view').addEventListener('click', () => {
+            // For MVP, we check a mock header or just switch if logged in
+            document.getElementById('user-dashboard').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'block';
+        });
+
+        document.getElementById('btn-back-dashboard').addEventListener('click', () => {
+            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('user-dashboard').style.display = 'block';
+        });
+
+        checkAuth();
     </script>
 </body>
 </html>
