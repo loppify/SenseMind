@@ -1,93 +1,234 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SenseMind - Analytics</title>
+    <title>SenseMind | Хмарний моніторинг стану</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        .state-indicator { width: 20px; height: 20px; border-radius: 50%; display: inline-block; }
-        .state-calm { background-color: #28a745; }
-        .state-focus { background-color: #007bff; }
-        .state-stress { background-color: #dc3545; }
-        #admin-panel, #user-dashboard { display: none; }
-        #auth-section { max-width: 400px; margin: 100px auto; }
+        :root {
+            --primary-bg: #0f172a;
+            --accent-purple: #8b5cf6;
+            --accent-blue: #3b82f6;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background: var(--primary-bg);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .nav-glass {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1rem 0;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border: none;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px var(--accent-purple);
+        }
+
+        .form-control {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: white;
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--accent-purple);
+            color: white;
+            box-shadow: none;
+        }
+
+        .state-badge {
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.8rem;
+        }
+
+        .state-calm { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
+        .state-stress { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+        #auth-section { max-width: 450px; margin-top: 80px; }
+        .auth-toggle { cursor: pointer; color: var(--accent-blue); text-decoration: underline; }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            display: none;
+            margin-right: 8px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-light">
-    <nav class="navbar navbar-dark bg-dark mb-4">
+<body>
+    <nav class="navbar nav-glass fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="/">SenseMind</a>
+            <a class="navbar-brand fw-bold text-white" href="#">
+                <span style="color: var(--accent-purple);">Sense</span>Mind
+            </a>
             <div id="nav-controls" style="display:none;">
-                <button id="btn-logout" class="btn btn-outline-danger btn-sm">Logout</button>
+                <button id="btn-logout" class="btn btn-outline-light btn-sm rounded-pill px-3">Вийти</button>
             </div>
         </div>
     </nav>
 
-    <div class="container">
-        <!-- Login Section -->
-        <div id="auth-section" class="card p-4 shadow">
-            <h3 class="text-center mb-4">Login to SenseMind</h3>
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input type="text" id="login-user" class="form-control">
+    <div class="container d-flex flex-column align-items-center">
+        <!-- Auth Section -->
+        <div id="auth-section" class="glass-card p-5 w-100 mt-5">
+            <div id="login-form">
+                <h2 class="text-center mb-4 fw-bold">Вітаємо знову</h2>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Логін</label>
+                    <input type="text" id="login-user" class="form-control" placeholder="Введіть ваш логін">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary">Пароль</label>
+                    <input type="password" id="login-pass" class="form-control" placeholder="••••••••">
+                </div>
+                <button id="btn-do-login" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner" id="login-loader"></div>
+                    <span>Увійти</span>
+                </button>
+                <p class="text-center mt-4 text-secondary">
+                    Немає акаунту? <span class="auth-toggle" onclick="toggleAuth(true)">Зареєструватися</span>
+                </p>
             </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" id="login-pass" class="form-control">
+
+            <div id="register-form" style="display:none;">
+                <h2 class="text-center mb-4 fw-bold">Створити акаунт</h2>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Логін</label>
+                    <input type="text" id="reg-user" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-secondary">Email</label>
+                    <input type="email" id="reg-email" class="form-control">
+                </div>
+                <div class="mb-4">
+                    <label class="form-label text-secondary">Пароль</label>
+                    <input type="password" id="reg-pass" class="form-control">
+                </div>
+                <button id="btn-do-register" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
+                    <div class="loading-spinner" id="reg-loader"></div>
+                    <span>Зареєструватися</span>
+                </button>
+                <p class="text-center mt-4 text-secondary">
+                    Вже є акаунт? <span class="auth-toggle" onclick="toggleAuth(false)">Увійти</span>
+                </p>
             </div>
-            <button id="btn-do-login" class="btn btn-primary w-100">Login</button>
-            <p id="login-error" class="text-danger mt-2" style="display:none;">Invalid credentials</p>
+            <p id="auth-error" class="text-danger text-center mt-3" style="display:none;"></p>
         </div>
 
-        <!-- User Dashboard -->
-        <div id="user-dashboard">
-            <h2 id="txt-welcome">Welcome</h2>
-            <div class="row mt-4">
-                <div class="col-md-4">
-                    <div class="card p-3 shadow-sm">
-                        <h5>Current State</h5>
-                        <div class="d-flex align-items-center">
-                            <span id="state-dot" class="state-indicator me-2"></span>
-                            <span id="state-name">Loading...</span>
+        <!-- Dashboard Section -->
+        <div id="user-dashboard" class="w-100 mt-5 pt-5" style="display:none;">
+            <div class="d-flex justify-content-between align-items-end mb-4">
+                <div>
+                    <h1 class="fw-bold mb-0">Твій стан зараз</h1>
+                    <p class="text-secondary">Дані оновлюються в реальному часі</p>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-5">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-secondary mb-4">Показник</h5>
+                        <div class="d-flex align-items-center justify-content-center flex-column py-4">
+                            <div id="state-badge" class="state-badge mb-3">Аналіз...</div>
+                            <h2 id="state-name" class="display-4 fw-bold text-center">Завантаження</h2>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-8">
-                    <div class="card p-3 shadow-sm">
-                        <h5>Recommendations</h5>
-                        <p id="recommendation-text">Please select or register a device to see data.</p>
+                <div class="col-md-7">
+                    <div class="glass-card p-4 h-100">
+                        <h5 class="text-secondary mb-3">Рекомендація</h5>
+                        <div class="p-3 rounded-4" style="background: rgba(255,255,255,0.02);">
+                            <p id="recommendation-text" class="fs-5 mb-0" style="line-height: 1.6;">
+                                Синхронізуємо дані з вашим IoT пристроєм...
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
-            
-            <button id="btn-admin-view" class="btn btn-link mt-4">Switch to Admin View (Requires Admin Rights)</button>
+
+            <div class="mt-5 d-flex gap-3">
+                <button onclick="window.location.href='/apidocs/'" class="btn btn-outline-light rounded-pill px-4">Swagger API Docs</button>
+                <button id="btn-admin-view" class="btn btn-outline-info rounded-pill px-4">Адмін-панель</button>
+            </div>
         </div>
 
-        <!-- Admin Panel -->
-        <div id="admin-panel">
-            <h3>System Administration</h3>
-            <div class="alert alert-info">Admin access granted. Monitoring system health.</div>
-            <div class="row mt-3">
-                <div class="col-md-6">
-                    <div class="card p-3">
-                        <h5>User Management</h5>
-                        <button class="btn btn-primary btn-sm mt-2">List Active Users</button>
+        <!-- Admin Section -->
+        <div id="admin-panel" class="w-100 mt-5 pt-5" style="display:none;">
+            <div class="glass-card p-5">
+                <h2 class="fw-bold mb-4">Керування системою</h2>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="p-4 rounded-4 bg-primary bg-opacity-10 border border-primary border-opacity-25 text-center">
+                            <h4>Експорт даних</h4>
+                            <p class="text-secondary small">Завантажити всі записи у форматі JSON</p>
+                            <button id="btn-export" class="btn btn-primary btn-sm px-4">Скачати Backup</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-4 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 text-center">
+                            <h4>Очищення БД</h4>
+                            <p class="text-secondary small">Видалити всі записи телеметрії</p>
+                            <button id="btn-clear" class="btn btn-outline-danger btn-sm px-4">Виконати Reset</button>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card p-3">
-                        <h5>System Logs & Backup</h5>
-                        <button class="btn btn-secondary btn-sm mt-2">Export Database</button>
-                    </div>
-                </div>
+                <button onclick="location.reload()" class="btn btn-link text-secondary mt-4">Повернутись назад</button>
             </div>
-            <button id="btn-back-dashboard" class="btn btn-link mt-3">Back to Dashboard</button>
         </div>
     </div>
 
     <script>
         let token = localStorage.getItem('sm_token');
+
+        function toggleAuth(showRegister) {
+            document.getElementById('login-form').style.display = showRegister ? 'none' : 'block';
+            document.getElementById('register-form').style.display = showRegister ? 'block' : 'none';
+            document.getElementById('auth-error').style.display = 'none';
+        }
 
         function checkAuth() {
             if (token) {
@@ -98,39 +239,70 @@
             } else {
                 document.getElementById('auth-section').style.display = 'block';
                 document.getElementById('user-dashboard').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'none';
                 document.getElementById('nav-controls').style.display = 'none';
             }
         }
 
         async function fetchData() {
-            // In a real app, we would fetch /api/v1/status/current/1
-            // For now, we simulate data display if logged in
-            document.getElementById('state-name').innerText = "Calm (Connected)";
-            document.getElementById('state-dot').className = "state-indicator state-calm";
+            try {
+                // В реальному проекті тут буде запит до /api/v1/status/current/1 з токеном
+                document.getElementById('state-name').innerText = "Спокійний";
+                document.getElementById('state-badge').className = "state-badge state-calm";
+                document.getElementById('state-badge').innerText = "Стабільно";
+                document.getElementById('recommendation-text').innerText = "Ваші показники в нормі. Продовжуйте працювати в такому ж темпі, але не забувайте про воду.";
+            } catch (err) { console.error(err); }
         }
 
-        document.getElementById('btn-do-login').addEventListener('click', async () => {
-            const username = document.getElementById('login-user').value;
-            const password = document.getElementById('login-pass').value;
+        async function handleAuth(url, body, loaderId) {
+            const loader = document.getElementById(loaderId);
+            const errorLabel = document.getElementById('auth-error');
+            
+            loader.style.display = 'inline-block';
+            errorLabel.style.display = 'none';
 
             try {
-                const response = await fetch('/api/v1/auth/login', {
+                const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify(body)
                 });
 
+                const data = await response.json();
                 if (response.ok) {
-                    const data = await response.json();
-                    token = data.access_token;
-                    localStorage.setItem('sm_token', token);
-                    checkAuth();
+                    if (url.includes('login')) {
+                        token = data.access_token;
+                        localStorage.setItem('sm_token', token);
+                        checkAuth();
+                    } else {
+                        alert('Реєстрація успішна! Тепер увійдіть.');
+                        toggleAuth(false);
+                    }
                 } else {
-                    document.getElementById('login-error').style.display = 'block';
+                    errorLabel.innerText = data.msg || data.error || 'Помилка авторизації';
+                    errorLabel.style.display = 'block';
                 }
             } catch (err) {
-                console.error(err);
+                errorLabel.innerText = 'Сервер недоступний';
+                errorLabel.style.display = 'block';
+            } finally {
+                loader.style.display = 'none';
             }
+        }
+
+        document.getElementById('btn-do-login').addEventListener('click', () => {
+            handleAuth('/api/v1/auth/login', {
+                username: document.getElementById('login-user').value,
+                password: document.getElementById('login-pass').value
+            }, 'login-loader');
+        });
+
+        document.getElementById('btn-do-register').addEventListener('click', () => {
+            handleAuth('/api/v1/auth/register', {
+                username: document.getElementById('reg-user').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-pass').value
+            }, 'reg-loader');
         });
 
         document.getElementById('btn-logout').addEventListener('click', () => {
@@ -140,14 +312,8 @@
         });
 
         document.getElementById('btn-admin-view').addEventListener('click', () => {
-            // For MVP, we check a mock header or just switch if logged in
             document.getElementById('user-dashboard').style.display = 'none';
             document.getElementById('admin-panel').style.display = 'block';
-        });
-
-        document.getElementById('btn-back-dashboard').addEventListener('click', () => {
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('user-dashboard').style.display = 'block';
         });
 
         checkAuth();
