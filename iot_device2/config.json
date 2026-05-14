@@ -1,5 +1,5 @@
 {
-    "server_url": "http://localhost:4000/api/v1/data/raw",
+    "server_url": "https://sense-mind-ffgpbxh4awgahxek.polandcentral-01.azurewebsites.net/api/v1/data/raw",
     "polling_interval_sec": 5,
     "smoothing_window": 3,
     "device_serial_id": "SN-001-002",

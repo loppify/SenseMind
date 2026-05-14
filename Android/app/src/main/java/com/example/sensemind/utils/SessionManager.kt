@@ -12,8 +12,7 @@ class SessionManager(context: Context) {
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_ADMIN_TOKEN = "admin_token"
 
-        // ТУТ МІНЯЄТЬСЯ АДРЕСА СЕРВЕРА
-        const val BASE_URL = "http://192.168.0.174:5000/"
+        const val BASE_URL = "https://sense-mind-ffgpbxh4awgahxek.polandcentral-01.azurewebsites.net"
         }
 
         fun saveToken(token: String) {

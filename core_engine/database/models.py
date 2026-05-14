@@ -52,5 +52,5 @@ class RecommendationLog(db.Model):
     __tablename__ = 'recommendation_logs'
     id = db.Column(db.Integer, primary_key=True)
     record_id = db.Column(db.Integer, db.ForeignKey('state_records.id'), nullable=False)
-    recommendation_text = db.Column(db.Text)
+    recommendation_text = db.Column(db.UnicodeText)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
