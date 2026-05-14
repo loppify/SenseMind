@@ -57,22 +57,31 @@ def get_my_devices():
         for d in devices
     ]), 200
 
-@device_bp.route('/<int:device_id>/change-password', methods=['PUT'])
+@device_bp.route('/<int:device_id>', methods=['PUT'])
 @jwt_required()
-def change_device_password(device_id):
+def update_device(device_id):
     """
-    Change device password
+    Update device name
     ---
     tags:
       - Devices
     security:
       - APIKeyHeader: []
     parameters:
+      - in: path
+        name: device_id
+        type: integer
+        required: true
       - in: body
         name: body
         schema:
           properties:
-            new_password: {type: string}
+            name: {type: string}
+    responses:
+      200:
+        description: Device updated
+      404:
+        description: Device not found
     """
     user_id = int(get_jwt_identity())
     device = Device.query.filter_by(id=device_id, user_id=user_id).first()
@@ -80,6 +89,36 @@ def change_device_password(device_id):
         return jsonify({"msg": "Device not found"}), 404
     
     data = request.get_json()
-    device.set_password(data['new_password'])
+    device.name = data.get('name', device.name)
     db.session.commit()
-    return jsonify({"msg": "Password changed"}), 200
+    return jsonify({"msg": "Device updated"}), 200
+
+@device_bp.route('/<int:device_id>', methods=['DELETE'])
+@jwt_required()
+def delete_device(device_id):
+    """
+    Delete a device
+    ---
+    tags:
+      - Devices
+    security:
+      - APIKeyHeader: []
+    parameters:
+      - in: path
+        name: device_id
+        type: integer
+        required: true
+    responses:
+      200:
+        description: Device deleted
+      404:
+        description: Device not found
+    """
+    user_id = int(get_jwt_identity())
+    device = Device.query.filter_by(id=device_id, user_id=user_id).first()
+    if not device:
+        return jsonify({"msg": "Device not found"}), 404
+    
+    db.session.delete(device)
+    db.session.commit()
+    return jsonify({"msg": "Device deleted"}), 200

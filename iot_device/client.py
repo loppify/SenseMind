@@ -23,12 +23,14 @@ class ConfigManager:
         if config_path is None:
             config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
         self.config_path = config_path
+        self._last_mtime = 0
         self.settings = self._load_config()
 
     def _load_config(self):
         if os.path.exists(self.config_path):
+            self._last_mtime = os.path.getmtime(self.config_path)
             with open(self.config_path, 'r') as f:
-                print(f"[INIT] Config loaded from {self.config_path}")
+                print(f"[CONFIG] Loaded from {self.config_path}")
                 return json.load(f)
         else:
             print("[ERROR] Config file not found! Using defaults.")
@@ -40,6 +42,14 @@ class ConfigManager:
                 "device_password": "device-secret-pass"
             }
 
+    def check_for_updates(self):
+        if os.path.exists(self.config_path):
+            mtime = os.path.getmtime(self.config_path)
+            if mtime > self._last_mtime:
+                self.settings = self._load_config()
+                return True
+        return False
+
     def get(self, key):
         return self.settings.get(key)
 
@@ -47,9 +57,7 @@ class ConfigManager:
 class SmartBandDevice:
     def __init__(self, config: ConfigManager, file_path: str = DATASET_PATH):
         self.config = config
-        self.server_url = config.get("server_url")
-        self.interval = config.get("polling_interval_sec")
-        self.window_size = config.get("smoothing_window")
+        self._sync_settings()
 
         self.hrv_buffer = deque(maxlen=self.window_size)
         self.gsr_buffer = deque(maxlen=self.window_size)
@@ -66,6 +74,12 @@ class SmartBandDevice:
         self.max_state_duration = random.randint(15, 30)
 
         self._load_dataset_initial()
+
+    def _sync_settings(self):
+        self.server_url = self.config.get("server_url")
+        self.interval = self.config.get("polling_interval_sec")
+        self.window_size = self.config.get("smoothing_window")
+        print(f"[DEVICE] Settings synced. Interval: {self.interval}s")
 
     def _load_dataset_initial(self):
         if os.path.exists(self.file_path):
@@ -145,6 +159,9 @@ class SmartBandDevice:
     def run(self):
         print(f"--- IoT Simulation Started ({self.config.get('device_serial_id')}) ---")
         while True:
+            if self.config.check_for_updates():
+                self._sync_settings()
+            
             self.send_to_server(self._process_data())
             time.sleep(self.interval)
 

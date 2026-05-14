@@ -29,7 +29,7 @@ class Device(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    records = db.relationship('StateRecord', backref='device', lazy=True)
+    records = db.relationship('StateRecord', backref='device', lazy=True, cascade="all, delete-orphan")
 
     def set_password(self, password):
         self.password_hash = sha256.hash(password)
@@ -46,7 +46,7 @@ class StateRecord(db.Model):
     hrv_score = db.Column(db.Float)
     gsr_score = db.Column(db.Float)
     
-    recommendations = db.relationship('RecommendationLog', backref='record', lazy=True)
+    recommendations = db.relationship('RecommendationLog', backref='record', lazy=True, cascade="all, delete-orphan")
 
 class RecommendationLog(db.Model):
     __tablename__ = 'recommendation_logs'
