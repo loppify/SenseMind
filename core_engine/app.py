@@ -67,8 +67,9 @@ def index():
 
 
 if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
     if os.getenv('FLASK_DEBUG') == '1':
-        app.run(debug=True, port=5000)
+        app.run(debug=True, host='0.0.0.0', port=port)
     else:
-        print("Starting waitress server on http://0.0.0.0:5000")
-        serve(app, host='0.0.0.0', port=5000)
+        print(f"Starting waitress server on http://0.0.0.0:{port}")
+        serve(app, host='0.0.0.0', port=port)
