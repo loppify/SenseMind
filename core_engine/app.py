@@ -29,8 +29,12 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 CORS(app)
 
-# with app.app_context():
-#     db.create_all()
+with app.app_context():
+    try:
+        db.create_all()
+        print("Database sync: Tables checked/created successfully.")
+    except Exception as e:
+        print(f"Database sync skipped or failed: {e}")
 
 swagger_config = {
     "headers": [],
