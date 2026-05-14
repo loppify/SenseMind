@@ -1,322 +1,554 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SenseMind | Хмарний моніторинг стану</title>
+    <title>SenseMind AI | Premium Analytics</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root {
-            --primary-bg: #0f172a;
-            --accent-purple: #8b5cf6;
-            --accent-blue: #3b82f6;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
+        :root[data-theme="dark"] {
+            --bg: #030712;
+            --surface: rgba(17, 24, 39, 0.7);
+            --surface-solid: #111827;
+            --border: rgba(255, 255, 255, 0.08);
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.3);
+            --danger: #ef4444;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
         }
+
+        :root[data-theme="light"] {
+            --bg: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.8);
+            --surface-solid: #ffffff;
+            --border: rgba(0, 0, 0, 0.05);
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #4f46e5;
+            --accent-glow: rgba(79, 70, 229, 0.15);
+            --danger: #dc2626;
+            --gradient: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+        }
+
+        * { transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
 
         body {
-            background: var(--primary-bg);
-            color: #f8fafc;
-            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
             min-height: 100vh;
+            margin: 0;
             overflow-x: hidden;
             background-image: 
-                radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.15) 0px, transparent 50%);
+                radial-gradient(circle at 0% 0%, var(--accent-glow) 0%, transparent 40%),
+                radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.1) 0%, transparent 40%);
         }
 
-        .glass-card {
-            background: var(--glass-bg);
+        .premium-card {
+            background: var(--surface);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            border: 1px solid var(--border);
+            border-radius: 28px;
+            padding: 2.5rem;
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar {
             backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            border-bottom: 1px solid var(--border);
+            padding: 1.25rem 0;
         }
 
-        .nav-glass {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
-            border-bottom: 1px solid var(--glass-border);
-            padding: 1rem 0;
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.6rem;
+            letter-spacing: -1px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+        .btn-vibe {
+            background: var(--gradient);
+            color: white !important;
             border: none;
-            border-radius: 12px;
-            padding: 12px 24px;
-            font-weight: 600;
-            transition: transform 0.2s, box-shadow 0.2s;
+            border-radius: 14px;
+            padding: 12px 28px;
+            font-weight: 700;
+            box-shadow: 0 10px 20px -5px var(--accent-glow);
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px -10px var(--accent-purple);
+        .btn-vibe:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 30px -5px var(--accent-glow);
         }
+
+        .control-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .control-btn:hover { background: var(--border); }
 
         .form-control {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--glass-border);
-            color: white;
-            border-radius: 12px;
-            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            color: var(--text-main);
+            padding: 14px 18px;
         }
 
         .form-control:focus {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--accent-purple);
-            color: white;
-            box-shadow: none;
+            background: var(--surface-solid);
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+            color: var(--text-main);
         }
 
-        .state-badge {
-            padding: 8px 16px;
-            border-radius: 50px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-size: 0.8rem;
-        }
-
-        .state-calm { background: rgba(34, 197, 94, 0.2); color: #4ade80; border: 1px solid #22c55e; }
-        .state-stress { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-
-        #auth-section { max-width: 450px; margin-top: 80px; }
-        .auth-toggle { cursor: pointer; color: var(--accent-blue); text-decoration: underline; }
-
-        .loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+        .state-orb {
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-            display: none;
-            margin-right: 8px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            position: relative;
+            box-shadow: 0 0 60px -10px var(--accent-glow);
         }
 
+        .state-orb::before {
+            content: '';
+            position: absolute;
+            width: 120%; height: 120%;
+            border-radius: 50%;
+            background: var(--accent);
+            opacity: 0.1;
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.1; }
+            50% { transform: scale(1.15); opacity: 0.2; }
+        }
+
+        .logout-link {
+            color: var(--danger);
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .logout-link:hover { background: rgba(239, 68, 68, 0.1); }
+
+        #auth-view { max-width: 480px; margin: 100px auto; }
+        
+        .nav-pills .nav-link {
+            color: var(--text-muted);
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .nav-pills .nav-link.active { background: var(--gradient); color: white; }
+
+        .loader-spinner {
+            width: 20px; height: 20px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            display: none;
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .device-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar nav-glass fixed-top">
-        <div class="container">
-            <a class="navbar-brand fw-bold text-white" href="#">
-                <span style="color: var(--accent-purple);">Sense</span>Mind
-            </a>
-            <div id="nav-controls" style="display:none;">
-                <button id="btn-logout" class="btn btn-outline-light btn-sm rounded-pill px-3">Вийти</button>
+    <nav class="navbar sticky-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand">SENSEMIND AI</span>
+            <div class="d-flex gap-3 align-items-center">
+                <div class="control-btn" onclick="toggleLanguage()" title="Switch Language">
+                    <span id="lang-label" class="fw-bold small">EN</span>
+                </div>
+                <div class="control-btn" onclick="toggleTheme()" id="theme-toggle">
+                    <i data-lucide="moon" size="20"></i>
+                </div>
+                <div id="user-controls" style="display:none;">
+                    <a href="#" onclick="logout()" class="logout-link">
+                        <i data-lucide="power" size="18"></i> <span data-i18n="logout">Вийти</span>
+                    </a>
+                </div>
             </div>
         </div>
     </nav>
 
-    <div class="container d-flex flex-column align-items-center">
-        <!-- Auth Section -->
-        <div id="auth-section" class="glass-card p-5 w-100 mt-5">
+    <div class="container py-5">
+        <!-- AUTH SECTION -->
+        <div id="auth-view" class="premium-card">
+            <ul class="nav nav-pills nav-fill mb-4 p-1 bg-black bg-opacity-10 rounded-3">
+                <li class="nav-item">
+                    <a class="nav-link active" id="tab-login" onclick="setAuthMode('login')" data-i18n="login_tab">Вхід</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" id="tab-reg" onclick="setAuthMode('reg')" data-i18n="reg_tab">Реєстрація</a>
+                </li>
+            </ul>
+
             <div id="login-form">
-                <h2 class="text-center mb-4 fw-bold">Вітаємо знову</h2>
+                <h3 class="fw-800 mb-1" data-i18n="login_title">Вітаємо знову.</h3>
+                <p class="text-muted mb-4" data-i18n="login_subtitle">Увійдіть для перегляду аналітики.</p>
                 <div class="mb-3">
-                    <label class="form-label text-secondary">Логін</label>
-                    <input type="text" id="login-user" class="form-control" placeholder="Введіть ваш логін">
+                    <input type="text" id="l-user" class="form-control" placeholder="Username" data-i18n-placeholder="username">
                 </div>
                 <div class="mb-4">
-                    <label class="form-label text-secondary">Пароль</label>
-                    <input type="password" id="login-pass" class="form-control" placeholder="••••••••">
+                    <input type="password" id="l-pass" class="form-control" placeholder="Password" data-i18n-placeholder="password">
                 </div>
-                <button id="btn-do-login" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
-                    <div class="loading-spinner" id="login-loader"></div>
-                    <span>Увійти</span>
+                <button class="btn-vibe w-100 d-flex align-items-center justify-content-center gap-2" onclick="handleLogin()">
+                    <span data-i18n="login_btn">Увійти</span>
+                    <div class="loader-spinner" id="l-loader"></div>
                 </button>
-                <p class="text-center mt-4 text-secondary">
-                    Немає акаунту? <span class="auth-toggle" onclick="toggleAuth(true)">Зареєструватися</span>
-                </p>
             </div>
 
-            <div id="register-form" style="display:none;">
-                <h2 class="text-center mb-4 fw-bold">Створити акаунт</h2>
+            <div id="reg-form" style="display:none;">
+                <h3 class="fw-800 mb-1" data-i18n="reg_title">Новий аккаунт.</h3>
+                <p class="text-muted mb-4" data-i18n="reg_subtitle">Створіть профіль за хвилину.</p>
                 <div class="mb-3">
-                    <label class="form-label text-secondary">Логін</label>
-                    <input type="text" id="reg-user" class="form-control">
+                    <input type="text" id="r-user" class="form-control" placeholder="Username" data-i18n-placeholder="username">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label text-secondary">Email</label>
-                    <input type="email" id="reg-email" class="form-control">
+                    <input type="email" id="r-email" class="form-control" placeholder="Email">
                 </div>
                 <div class="mb-4">
-                    <label class="form-label text-secondary">Пароль</label>
-                    <input type="password" id="reg-pass" class="form-control">
+                    <input type="password" id="r-pass" class="form-control" placeholder="Password" data-i18n-placeholder="password">
                 </div>
-                <button id="btn-do-register" class="btn btn-primary w-100 d-flex align-items-center justify-content-center">
-                    <div class="loading-spinner" id="reg-loader"></div>
-                    <span>Зареєструватися</span>
+                <button class="btn-vibe w-100 d-flex align-items-center justify-content-center gap-2" onclick="handleRegister()">
+                    <span data-i18n="reg_btn">Зареєструватися</span>
+                    <div class="loader-spinner" id="r-loader"></div>
                 </button>
-                <p class="text-center mt-4 text-secondary">
-                    Вже є акаунт? <span class="auth-toggle" onclick="toggleAuth(false)">Увійти</span>
-                </p>
             </div>
-            <p id="auth-error" class="text-danger text-center mt-3" style="display:none;"></p>
+            <div id="auth-msg" class="mt-3 text-center small text-danger" style="display:none;"></div>
         </div>
 
-        <!-- Dashboard Section -->
-        <div id="user-dashboard" class="w-100 mt-5 pt-5" style="display:none;">
-            <div class="d-flex justify-content-between align-items-end mb-4">
-                <div>
-                    <h1 class="fw-bold mb-0">Твій стан зараз</h1>
-                    <p class="text-secondary">Дані оновлюються в реальному часі</p>
-                </div>
-            </div>
-
+        <!-- DASHBOARD SECTION -->
+        <div id="dash-view" style="display:none;">
             <div class="row g-4">
-                <div class="col-md-5">
-                    <div class="glass-card p-4 h-100">
-                        <h5 class="text-secondary mb-4">Показник</h5>
-                        <div class="d-flex align-items-center justify-content-center flex-column py-4">
-                            <div id="state-badge" class="state-badge mb-3">Аналіз...</div>
-                            <h2 id="state-name" class="display-4 fw-bold text-center">Завантаження</h2>
+                <!-- Status Card -->
+                <div class="col-xl-4 col-lg-5">
+                    <div class="premium-card h-100 text-center">
+                        <div class="state-orb" id="status-orb">
+                            <i data-lucide="zap" size="54" color="white"></i>
+                        </div>
+                        <h6 class="text-uppercase tracking-widest text-muted small fw-800 mb-2" data-i18n="current_status">Поточний стан</h6>
+                        <h1 class="display-5 fw-800 mb-4" id="state-text">---</h1>
+                        
+                        <div class="p-4 rounded-4 bg-black bg-opacity-5 text-start">
+                            <div class="d-flex align-items-center gap-2 mb-2 text-muted small fw-bold">
+                                <i data-lucide="info" size="16"></i> <span data-i18n="ai_recommendation">AI Рекомендація</span>
+                            </div>
+                            <p class="mb-0 fw-500" id="rec-text" data-i18n="waiting_data">Синхронізація з хмарою...</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-7">
-                    <div class="glass-card p-4 h-100">
-                        <h5 class="text-secondary mb-3">Рекомендація</h5>
-                        <div class="p-3 rounded-4" style="background: rgba(255,255,255,0.02);">
-                            <p id="recommendation-text" class="fs-5 mb-0" style="line-height: 1.6;">
-                                Синхронізуємо дані з вашим IoT пристроєм...
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="mt-5 d-flex gap-3">
-                <button onclick="window.location.href='/apidocs/'" class="btn btn-outline-light rounded-pill px-4">Swagger API Docs</button>
-                <button id="btn-admin-view" class="btn btn-outline-info rounded-pill px-4">Адмін-панель</button>
-            </div>
-        </div>
-
-        <!-- Admin Section -->
-        <div id="admin-panel" class="w-100 mt-5 pt-5" style="display:none;">
-            <div class="glass-card p-5">
-                <h2 class="fw-bold mb-4">Керування системою</h2>
-                <div class="row g-4">
-                    <div class="col-md-6">
-                        <div class="p-4 rounded-4 bg-primary bg-opacity-10 border border-primary border-opacity-25 text-center">
-                            <h4>Експорт даних</h4>
-                            <p class="text-secondary small">Завантажити всі записи у форматі JSON</p>
-                            <button id="btn-export" class="btn btn-primary btn-sm px-4">Скачати Backup</button>
+                <!-- History Chart -->
+                <div class="col-xl-8 col-lg-7">
+                    <div class="premium-card h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-5">
+                            <div>
+                                <h4 class="fw-800 mb-0" data-i18n="history_title">Динаміка стану</h4>
+                                <p class="text-muted small mb-0" data-i18n="history_subtitle">Аналіз за останню годину активності</p>
+                            </div>
+                            <div class="control-btn" onclick="refreshData()"><i data-lucide="refresh-cw" size="18"></i></div>
                         </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="p-4 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-25 text-center">
-                            <h4>Очищення БД</h4>
-                            <p class="text-secondary small">Видалити всі записи телеметрії</p>
-                            <button id="btn-clear" class="btn btn-outline-danger btn-sm px-4">Виконати Reset</button>
+                        <div style="height: 320px; width: 100%;">
+                            <canvas id="mainChart"></canvas>
                         </div>
                     </div>
                 </div>
-                <button onclick="location.reload()" class="btn btn-link text-secondary mt-4">Повернутись назад</button>
+
+                <!-- Devices Section -->
+                <div class="col-12">
+                    <div class="premium-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-800 mb-0" data-i18n="my_devices">Мої пристрої</h5>
+                            <button class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="alert('Demo: Use Android App to link devices')" data-i18n="add_device">+ Додати</button>
+                        </div>
+                        <div id="device-list" class="row g-3">
+                            <!-- Devices injected here -->
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // Translations
+        const i18n = {
+            uk: {
+                logout: "Вийти", login_tab: "Вхід", reg_tab: "Реєстрація",
+                login_title: "З поверненням.", login_subtitle: "Увійдіть для перегляду аналітики.",
+                login_btn: "Увійти", reg_title: "Новий аккаунт.",
+                reg_subtitle: "Створіть профіль за хвилину.", reg_btn: "Створити профіль",
+                username: "Логін", password: "Пароль", current_status: "Поточний стан",
+                ai_recommendation: "AI Рекомендація", waiting_data: "Синхронізація...",
+                history_title: "Динаміка стану", history_subtitle: "Аналіз активності",
+                my_devices: "Мої пристрої", add_device: "Додати",
+                Stress: "Стрес", Calm: "Спокій", Focus: "Концентрація", Relaxed: "Релакс"
+            },
+            en: {
+                logout: "Logout", login_tab: "Login", reg_tab: "Register",
+                login_title: "Welcome back.", login_subtitle: "Log in to view your analytics.",
+                login_btn: "Log In", reg_title: "New Account.",
+                reg_subtitle: "Create your profile in a minute.", reg_btn: "Sign Up",
+                username: "Username", password: "Password", current_status: "Current Status",
+                ai_recommendation: "AI Recommendation", waiting_data: "Syncing data...",
+                history_title: "State Dynamics", history_subtitle: "Last hour activity",
+                my_devices: "My Devices", add_device: "Add",
+                Stress: "Stress", Calm: "Calm", Focus: "Focus", Relaxed: "Relaxed"
+            }
+        };
+
+        let currentLang = localStorage.getItem('sm_lang') || 'uk';
+        let currentTheme = localStorage.getItem('sm_theme') || 'dark';
         let token = localStorage.getItem('sm_token');
+        let chart = null;
 
-        function toggleAuth(showRegister) {
-            document.getElementById('login-form').style.display = showRegister ? 'none' : 'block';
-            document.getElementById('register-form').style.display = showRegister ? 'block' : 'none';
-            document.getElementById('auth-error').style.display = 'none';
+        // UI Management
+        function applyI18n() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                el.innerText = i18n[currentLang][key] || key;
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                el.placeholder = i18n[currentLang][key] || key;
+            });
+            document.getElementById('lang-label').innerText = currentLang.toUpperCase();
         }
 
-        function checkAuth() {
-            if (token) {
-                document.getElementById('auth-section').style.display = 'none';
-                document.getElementById('user-dashboard').style.display = 'block';
-                document.getElementById('nav-controls').style.display = 'block';
-                fetchData();
-            } else {
-                document.getElementById('auth-section').style.display = 'block';
-                document.getElementById('user-dashboard').style.display = 'none';
-                document.getElementById('admin-panel').style.display = 'none';
-                document.getElementById('nav-controls').style.display = 'none';
+        function toggleLanguage() {
+            currentLang = currentLang === 'uk' ? 'en' : 'uk';
+            localStorage.setItem('sm_lang', currentLang);
+            applyI18n();
+            if(token) refreshData();
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('sm_theme', currentTheme);
+            updateThemeIcon();
+            if(chart) {
+                chart.options.scales.x.grid.color = currentTheme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+                chart.update();
             }
         }
 
-        async function fetchData() {
-            try {
-                // В реальному проекті тут буде запит до /api/v1/status/current/1 з токеном
-                document.getElementById('state-name').innerText = "Спокійний";
-                document.getElementById('state-badge').className = "state-badge state-calm";
-                document.getElementById('state-badge').innerText = "Стабільно";
-                document.getElementById('recommendation-text').innerText = "Ваші показники в нормі. Продовжуйте працювати в такому ж темпі, але не забувайте про воду.";
-            } catch (err) { console.error(err); }
+        function updateThemeIcon() {
+            const btn = document.getElementById('theme-toggle');
+            btn.innerHTML = currentTheme === 'dark' ? '<i data-lucide="sun" size="20"></i>' : '<i data-lucide="moon" size="20"></i>';
+            lucide.createIcons();
         }
 
-        async function handleAuth(url, body, loaderId) {
-            const loader = document.getElementById(loaderId);
-            const errorLabel = document.getElementById('auth-error');
+        function setAuthMode(mode) {
+            document.getElementById('login-form').style.display = mode === 'login' ? 'block' : 'none';
+            document.getElementById('reg-form').style.display = mode === 'reg' ? 'block' : 'none';
+            document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+            document.getElementById('tab-reg').classList.toggle('active', mode === 'reg');
+        }
+
+        // Logic
+        async function handleLogin() {
+            const btn = document.querySelector('#login-form button');
+            const loader = document.getElementById('l-loader');
+            const msg = document.getElementById('auth-msg');
             
-            loader.style.display = 'inline-block';
-            errorLabel.style.display = 'none';
+            loader.style.display = 'block';
+            msg.style.display = 'none';
 
             try {
-                const response = await fetch(url, {
+                const res = await fetch('/api/v1/auth/login', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: document.getElementById('l-user').value,
+                        password: document.getElementById('l-pass').value
+                    })
                 });
-
-                const data = await response.json();
-                if (response.ok) {
-                    if (url.includes('login')) {
-                        token = data.access_token;
-                        localStorage.setItem('sm_token', token);
-                        checkAuth();
-                    } else {
-                        alert('Реєстрація успішна! Тепер увійдіть.');
-                        toggleAuth(false);
-                    }
+                const data = await res.json();
+                if(res.ok) {
+                    token = data.access_token;
+                    localStorage.setItem('sm_token', token);
+                    location.reload();
                 } else {
-                    errorLabel.innerText = data.msg || data.error || 'Помилка авторизації';
-                    errorLabel.style.display = 'block';
+                    msg.innerText = data.msg || 'Error';
+                    msg.style.display = 'block';
                 }
-            } catch (err) {
-                errorLabel.innerText = 'Сервер недоступний';
-                errorLabel.style.display = 'block';
-            } finally {
-                loader.style.display = 'none';
-            }
+            } catch(e) { msg.innerText = 'Server Error'; msg.style.display = 'block'; }
+            finally { loader.style.display = 'none'; }
         }
 
-        document.getElementById('btn-do-login').addEventListener('click', () => {
-            handleAuth('/api/v1/auth/login', {
-                username: document.getElementById('login-user').value,
-                password: document.getElementById('login-pass').value
-            }, 'login-loader');
-        });
+        async function handleRegister() {
+            try {
+                const res = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        username: document.getElementById('r-user').value,
+                        email: document.getElementById('r-email').value,
+                        password: document.getElementById('r-pass').value
+                    })
+                });
+                if(res.ok) {
+                    alert('Success! Please log in.');
+                    setAuthMode('login');
+                } else {
+                    const data = await res.json();
+                    alert(data.msg || 'Error');
+                }
+            } catch(e) { alert('Server Error'); }
+        }
 
-        document.getElementById('btn-do-register').addEventListener('click', () => {
-            handleAuth('/api/v1/auth/register', {
-                username: document.getElementById('reg-user').value,
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-pass').value
-            }, 'reg-loader');
-        });
-
-        document.getElementById('btn-logout').addEventListener('click', () => {
+        function logout() {
             localStorage.removeItem('sm_token');
-            token = null;
-            checkAuth();
-        });
+            location.reload();
+        }
 
-        document.getElementById('btn-admin-view').addEventListener('click', () => {
-            document.getElementById('user-dashboard').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'block';
-        });
+        async function refreshData() {
+            if(!token) return;
+            try {
+                // Get devices first to find an ID
+                const resD = await fetch('/api/v1/devices/my', { headers: {'Authorization': `Bearer ${token}`} });
+                let activeDeviceId = 1;
+                if(resD.ok) {
+                    const devices = await resD.json();
+                    const cont = document.getElementById('device-list');
+                    cont.innerHTML = devices.length ? '' : `<p class="text-muted small">${currentLang === 'uk' ? 'Пристрої не знайдено' : 'No devices found'}</p>`;
+                    if(devices.length) {
+                        activeDeviceId = devices[0].id;
+                        devices.forEach(dev => {
+                            cont.innerHTML += `
+                                <div class="col-md-4">
+                                    <div class="device-item">
+                                        <div>
+                                            <div class="fw-bold">${dev.name}</div>
+                                            <div class="small text-muted">${dev.device_serial_id}</div>
+                                        </div>
+                                        <i data-lucide="cpu" size="18" class="text-muted"></i>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        lucide.createIcons();
+                    }
+                }
 
-        checkAuth();
+                // Current State
+                const resS = await fetch(`/api/v1/status/current/${activeDeviceId}`, { headers: {'Authorization': `Bearer ${token}`} });
+                if(resS.ok) {
+                    const d = await resS.json();
+                    const translatedState = i18n[currentLang][d.classified_state] || d.classified_state;
+                    document.getElementById('state-text').innerText = translatedState;
+                    document.getElementById('rec-text').innerText = d.recommendation;
+                    
+                    const colors = { Stress: '#ef4444', Calm: '#22c55e', Focus: '#6366f1' };
+                    document.getElementById('status-orb').style.background = colors[d.classified_state] || 'var(--gradient)';
+                }
+
+                // History
+                const resH = await fetch(`/api/v1/history/${activeDeviceId}`, { headers: {'Authorization': `Bearer ${token}`} });
+                if(resH.ok) {
+                    const history = await resH.json();
+                    const stateMap = { Relaxed: 0, Calm: 1, Focus: 2, Stress: 3 };
+                    chart.data.labels = history.map(h => "");
+                    chart.data.datasets[0].data = history.map(h => stateMap[h.classified_state] || 0);
+                    chart.update();
+                }
+            } catch(e) { console.warn('Sync failed', e); }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        borderColor: '#6366f1',
+                        borderWidth: 4,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: (context) => {
+                            const chart = context.chart;
+                            const {ctx, chartArea} = chart;
+                            if (!chartArea) return null;
+                            const gradient = ctx.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                            gradient.addColorStop(0, 'rgba(99, 102, 241, 0)');
+                            gradient.addColorStop(1, 'rgba(99, 102, 241, 0.2)');
+                            return gradient;
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { display: false, min: -0.5, max: 3.5 },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // Init
+        document.documentElement.setAttribute('data-theme', currentTheme);
+        updateThemeIcon();
+        
+        if(token) {
+            document.getElementById('auth-view').style.display = 'none';
+            document.getElementById('dash-view').style.display = 'block';
+            document.getElementById('user-controls').style.display = 'block';
+            initChart();
+            refreshData();
+            setInterval(refreshData, 15000);
+        }
+
+        applyI18n();
+        lucide.createIcons();
     </script>
 </body>
 </html>
