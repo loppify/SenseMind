@@ -28,8 +28,8 @@ migrate = Migrate(app, db)
 jwt = JWTManager(app)
 CORS(app)
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
 
 swagger_config = {
     "headers": [],
